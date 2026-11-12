@@ -1,41 +1,29 @@
-# ferramentas/queimadas
+# Pipeline de risco de fogo
 
-Scripts de preparacao, ingestao e processamento do modulo estadual de
-risco de queimadas/incendio.
+O módulo consome produtos oficiais INPE observados e previstos, agrega
+o RF aos trechos rodoviários e publica GeoJSON/JSON. Não recalcula
+atualmente o modelo INPE com IMERG/GFS locais.
 
-**Especificacao completa (metodologia, entradas, saidas, integracao):**
-leia primeiro `data/queimadas/README.md`.
+## Execução atual
 
-Estes scripts ficam fora do backend operacional. O runtime Flask deve ler
-somente produtos ja gerados em `data/queimadas/processed/` ou artefatos
-leves em `static/data/queimadas/`.
+Preparação da base: `01_prepare_base_layers.py`.
+Ciclo operacional: `05_compute_rf_grid.py` →
+`06_aggregate_to_der_segments.py` → `07_export_public_layers.py`.
 
-## Pipeline planejado
+`core/fire_pipeline.py` executa essas três etapas em subprocessos,
+com polling configurado por `QUEIMADAS_POLL_MIN` (padrão 30 minutos).
+Portanto, esta subpasta é exceção entre as ferramentas: participa do
+runtime e é incluída na imagem Docker.
 
-```cmd
-python ferramentas/queimadas/01_prepare_base_layers.py
-python ferramentas/queimadas/02_fetch_imerg.py
-python ferramentas/queimadas/03_fetch_gfs.py
-python ferramentas/queimadas/04_fetch_focos_inpe.py
-python ferramentas/queimadas/05_compute_rf_grid.py
-python ferramentas/queimadas/06_aggregate_to_der_segments.py
-python ferramentas/queimadas/07_export_public_layers.py
-```
+`core/fire_risk.py` lá os produtos prontos sem executar downloads
+durante a consulta HTTP. Horizontes atuais: observado, D+1, D+2 e D+3.
+Scripts 02–04 são reservados a estudos/ingestões futuras, não requisitos
+do processamento atual.
 
-Detalhe de cada script, esquemas de dados e contratos de API: ver secao 5
-de `data/queimadas/README.md`.
+Dados em `data/queimadas/`; publicação em `static/data/queimadas/`;
+versões administrativas em `hazardtrack.produto_monitoramento`.
 
-## Escopo
+A classificação RF é independente de RA/ICC/RD. A migração institucional
+não criou entrega automática de alertas de fogo.
 
-- Cobertura: Estado de Sao Paulo.
-- Saida operacional: risco de queimadas por trecho rodoviario DER-SP.
-- Metodologia base: INPE Risco de Fogo v11; INMET/Nesterov auxiliar.
-- Horizonte: observado diario + previsao D+1 a D+5.
-
-## Regras de isolamento
-
-- Nao importar nem alterar `core/risk.py`, `core/aggregator.py` ou
-  `core/merge_ingest.py` para calcular queimadas.
-- Integracao runtime via `core/fire_risk.py` (leitura/publicacao only).
-- Downloads brutos: `data/queimadas/raw/`.
-- Intermediarios: `data/queimadas/interim/`.
+[Especificação detalhada](../../data/queimadas/README.md).

@@ -11,6 +11,22 @@ para rodovias da Regiao do Litoral Norte de Sao Paulo (DER-SP).
 - Limite de linha: 79 caracteres (Flake8)
 
 ## Arquitetura
+- `core/admin_workspace.py` / `templates/admin_workspace.html` /
+  `static/admin_workspace.js` e `.css` - nova area restrita em
+  `/admin/central`, 12 secoes; login SIGMA GESTOR ou ADMIN.
+- `core/database_admin.py` / `core/database_labels.py` - catalogo e
+  editor das 33 tabelas em `/admin/tabelas`; aliases em portugues,
+  CSRF, auditoria e concorrencia. Historico permanece somente leitura.
+- `core/institution_directory.py` - consulta minima de pessoa/instituicao
+  no SIGMA e validacao dos UUIDs antes de gravar vinculos operacionais.
+- `core/operational_routing.py` - simulacao de destinatarios por natureza,
+  nivel, fase, vigencia e abrangencia, sem criar fila ou enviar alertas.
+- `core/public_alert_feed.py` - `/api/public/alerts`, feed incremental
+  de eventos geo/hidro sem dados de destinatarios; cursor textual.
+- `core/managed_geodata.py` - inclusao de UAs oficiais em versoes de
+  GeoPackage/GeoJSON no volume runtime, selecionadas por `active.json`.
+  O carregador de UAs usa a versao ativa ou os arquivos originais.
+  Ver `docs/AREA_RESTRITA.md`. Envio institucional segue desativado.
 - `app.py` - Flask backend + scheduler
 - `core/risk.py` - Calculo de Risco Dinamico (RD = RA x ICC)
 - `core/zones.py` - Carrega 809 UAs de
@@ -67,7 +83,7 @@ para rodovias da Regiao do Litoral Norte de Sao Paulo (DER-SP).
   `gauge_primary.suspect_ids`.
 - `core/merge_inpe.py` - Download/decode MERGE/INPE (ThreadPool + ProcessPool)
 - `core/merge_ingest.py` - Ingest continuo em background + cache RAM incremental
-- `core/forecast_wrf_prec_hourly.py` - Previsao WRF (composicao PDF)
+- `core/forecast_wrf_prec_hourly.py` - Previsao WRF usada no RD ao vivo (GEO: 72h + 24h; HID: 18h + 6h)
 - `core/regions.py` - Poligonos das 4 regioes monitoradas. Le exclusivamente
   `data/regioes/regioes_estudo.geojson` (poligonos com TODOS os atributos
   nativos da camada-mae `regioes_estudo` do GPKG: regiao_id, regiao_nome,
@@ -82,7 +98,8 @@ para rodovias da Regiao do Litoral Norte de Sao Paulo (DER-SP).
   `id`/`nome`/`rodovia`), e o frontend popula a camada "Regioes
   monitoradas" no mapa direto deles.
 - `core/admin_telemetry.py` - Telemetria persistente por ciclo do
-  pipeline geodinamico: JSONL em `PLI_RUNTIME_DIR/cycle_telemetry.jsonl`
+  pipeline geodinamico: PostgreSQL via admin_store quando configurado.
+  No modo local sem banco: JSONL em `PLI_RUNTIME_DIR/cycle_telemetry.jsonl`
   (volume `pli_hazardtrack_runtime` na VM), ring buffer de 2016 ciclos
   (14 dias). Gravado por `State.update()` via `_telemetry_entry`.
 - `core/admin_analytics.py` - Analytics do painel /admin: series por
@@ -249,9 +266,28 @@ para rodovias da Regiao do Litoral Norte de Sao Paulo (DER-SP).
 
 ## Gaps Conhecidos
 - RA nao mapeado para rodovias secundarias (SP 131, SPA, etc.)
-- Previsao CPTEC fornece condicoes, nao precipitacao em mm exata
-- Modulo DAEE em `ferramentas/integracao-pendente/` (nao integrado ao pipeline)
+- XML CPTEC fornece condicoes; WRF horario fornece chuva prevista ao RD.
+- DAEE legado nao usado; SIBH/SP Aguas integrado via gauge_primary/correction.
 - Divisas internas das UAs (~91%) sao interpoladas; vetor IG (Anexo B) indisponivel
+
+## Gestao institucional e banco (12/11/2026)
+
+- Banco operacional: `pli_hazardtrack`, hospedado em `sigma_pli_db`.
+- Migracoes 001 a 003: 26 tabelas em `hazardtrack` e 7 em `dominios`.
+- SIGMA centraliza pessoas, instituicoes e usuarios. HazardTrack guarda
+  UUIDs de referencia e contatos exclusivamente operacionais.
+- Autenticacao via API SIGMA. Dominios com linhas extensiveis.
+- Tabelas institucionais aplicadas; interface institucional integrada,
+  API de alertas, anexos JSON
+  e entrega por destinatario ainda pendentes. Envios externos desativados.
+- `configuracao_envio` ainda nao controla o notificador legado.
+- Atuacao estadual: informar instituicoes; elas gerenciam equipes e agentes.
+- Ver `docs/GESTAO_INSTITUCIONAL.md` e `scripts/sql/003_gestao_institucional.md`.
+- Editor generico local: `/admin/tabelas`, `core/database_admin.py`.
+  Aliases em `core/database_labels.py`; detalhes em `docs/TABELAS_DO_BANCO.md`.
+  Mantem as 10 tabelas tecnicas anteriores somente para consulta.
+  Ainda sem deploy. Testes: `tests/test_database_admin.py` e
+  `tests/test_database_admin_ui.cjs` (DOM isolado, requer jsdom).
 
 ## Ferramentas auxiliares
 Scripts de geracao de UAs e preparacao de dados em `ferramentas/`

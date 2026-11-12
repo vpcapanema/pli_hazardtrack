@@ -3,7 +3,7 @@
             (grupo <b>Riscos associados a eventos climáticos extremos</b>):
             <b>risco geológico</b> / alias <b>Risco a movimentos de massa</b>,
             <b>risco hidrológico</b> / alias <b>Risco a inundação</b> (809 UAs,
-            RD + chuva MERGE/INPE) e <b>risco de fogo</b> / alias
+            RD + chuva SIBH/MERGE e previsão WRF) e <b>risco de fogo</b> / alias
             <b>Risco a incêndios</b> (INPE, ~4.583 trechos rodoviários
             estaduais). Respostas em GeoJSON
             (<code>application/geo+json</code>) ou JSON.
@@ -14,6 +14,13 @@
             calculados (RD, chuva, ICC). Spatial join direto em
             <code>ua_id</code>. Fogo: produto INPE independente do PPDC (sem
             RA/ICC/RD).
+          </p>
+
+          <p class="modal-note">
+            Estes feeds permitem consultar dados. A API de distribuição de
+            alertas institucionais, assinaturas automáticas e anexos JSON
+            ainda dependem de implementação. Envios externos permanecem
+            desativados nesta etapa de protótipo.
           </p>
 
           <h3>Nomenclatura — interface e API</h3>

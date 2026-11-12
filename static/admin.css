@@ -33,6 +33,7 @@
 }
 
 * { box-sizing: border-box; }
+.access-profile { width: 100%; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 8px; font: inherit; background: var(--card); color: var(--ink); margin-bottom: 12px; }
 html, body {
     margin: 0;
     padding: 0;

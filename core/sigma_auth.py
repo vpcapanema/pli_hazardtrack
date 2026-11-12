@@ -177,13 +177,14 @@ def _lookup_full_name_by_user_id(user_id: object) -> str | None:
 def _authenticate_gestor_via_api(
     identifier: str,
     password: str,
+    profile: str = GESTOR_PROFILE,
 ) -> SigmaUser | None:
     base = sigma_api_base_url().rstrip("/")
     url = f"{base}/api/auth/login"
     payload = {
         "identifier": identifier.strip(),
         "password": password,
-        "tipo_usuario": GESTOR_PROFILE,
+        "tipo_usuario": profile,
     }
 
     try:
@@ -221,7 +222,7 @@ def _authenticate_gestor_via_api(
         return None
 
     tipo = str(user.get("tipo_usuario", "")).strip().upper()
-    if tipo != GESTOR_PROFILE:
+    if tipo != profile or tipo not in ("GESTOR", "ADMIN"):
         return None
 
     user_id = user.get("id")
@@ -243,8 +244,9 @@ def _authenticate_gestor_via_api(
 def _authenticate_gestor_via_db(
     identifier: str,
     password: str,
+    profile: str = GESTOR_PROFILE,
 ) -> SigmaUser | None:
-    params = {"identifier": identifier.strip(), "profile": GESTOR_PROFILE}
+    params = {"identifier": identifier.strip(), "profile": profile}
     dsn = sigma_database_dsn()
 
     try:
@@ -288,16 +290,20 @@ def _authenticate_gestor_via_db(
     )
 
 
-def authenticate_gestor(identifier: str, password: str) -> SigmaUser | None:
+def authenticate_gestor(
+    identifier: str, password: str, profile: str = GESTOR_PROFILE,
+) -> SigmaUser | None:
     """Valida credenciais no SIGMA. Prefere API HTTP; fallback PostgreSQL."""
+    if profile not in ("GESTOR", "ADMIN"):
+        return None
     if not sigma_configured():
         log.warning("SIGMA nao configurado para autenticacao.")
         return None
 
     if sigma_api_configured():
-        return _authenticate_gestor_via_api(identifier, password)
+        return _authenticate_gestor_via_api(identifier, password, profile)
 
-    return _authenticate_gestor_via_db(identifier, password)
+    return _authenticate_gestor_via_db(identifier, password, profile)
 
 
 def healthcheck() -> dict:

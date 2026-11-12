@@ -31,6 +31,8 @@ import logging
 import os
 import smtplib
 
+from . import alert_store
+
 log = logging.getLogger("notifier")
 
 
@@ -60,6 +62,7 @@ class NotifierStatus:
 class Notifier:
     def __init__(self):
         self._lock = Lock()
+        self._evaluate_lock = Lock()
         self.threshold = int(_env("SAMAEG_RD_ALERT_THRESHOLD", "3"))
         self.cooldown = timedelta(
             hours=float(_env("SAMAEG_ALERT_COOLDOWN_H", "6"))
@@ -106,21 +109,81 @@ class Notifier:
         separado por canal. Retorna o numero de zonas alertadas (0 se nada).
         """
         now = now or datetime.now(timezone.utc)
-        if not (self.enabled_email or self.enabled_webhook):
-            return 0
-
-        try:
-            alerts = self._select_alerts(points, now, channel=channel)
-            self.last_alert_count = len(alerts)
-            if not alerts:
+        with self._evaluate_lock:
+            try:
+                if alert_store.configured():
+                    if channel not in ("geo", "hidro"):
+                        raise ValueError("Persistencia exige canal explicito")
+                    return self._evaluate_persistent(
+                        points, summary, now, channel,
+                    )
+                if alert_store.required():
+                    raise RuntimeError("Banco obrigatorio nao configurado")
+                if not (self.enabled_email or self.enabled_webhook):
+                    return 0
+                alerts = self._select_alerts(points, now, channel=channel)
+                self.last_alert_count = len(alerts)
+                if not alerts:
+                    return 0
+                channels_ok = self._dispatch(
+                    alerts, summary, now, channel=channel,
+                )
+                if any(channels_ok.values()):
+                    with self._lock:
+                        for p in alerts:
+                            key = self._alert_key(p, channel)
+                            self._last_alert[key] = (p["rd"], now)
+                    return len(alerts)
                 return 0
-            self._dispatch(alerts, summary, now, channel=channel)
-            return len(alerts)
-        except Exception as e:  # noqa: BLE001
-            self.last_error = str(e)
-            self.last_error_at = now
-            log.exception("falha ao notificar: %s", e)
-            return 0
+            except Exception as e:  # noqa: BLE001
+                self.last_error = type(e).__name__
+                self.last_error_at = now
+                log.exception("falha ao registrar/notificar alertas")
+                return 0
+
+    def _evaluate_persistent(self, points, summary, now, channel) -> int:
+        transports = []
+        if self.enabled_email:
+            transports.append("email")
+        if self.enabled_webhook:
+            transports.append("webhook")
+        alert_store.observe(
+            points, summary, now, channel, self.threshold,
+            transports, self.cooldown,
+        )
+        sent_ids = set()
+        channels_ok: Dict[str, bool] = {}
+        for transport in transports:
+            while True:
+                token, jobs = alert_store.claim(channel, transport, now)
+                if not jobs:
+                    break
+                alerts = [j["conteudo"]["point"] for j in jobs]
+                job_summary = jobs[0]["conteudo"]["summary"]
+                subject, body = self._format(
+                    alerts, job_summary, now, channel=channel,
+                )
+                self.last_error = None
+                if transport == "email":
+                    ok = self._send_email(subject, body)
+                else:
+                    ok = self._send_webhook(subject, body, alerts, now)
+                alert_store.finish(
+                    jobs, token, now, ok,
+                    None if ok else f"Falha no transporte {transport}",
+                )
+                channels_ok[transport] = (
+                    channels_ok.get(transport, True) and ok
+                )
+                if ok:
+                    sent_ids.update(j["alerta_id"] for j in jobs)
+        with self._lock:
+            self.last_channels_ok = channels_ok
+            self.last_alert_count = len(sent_ids)
+            if sent_ids:
+                self.sent_total += 1
+                self.last_sent_at = now
+        return len(sent_ids)
 
     def get_status(self) -> Dict[str, Any]:
         with self._lock:
@@ -138,7 +201,14 @@ class Notifier:
                 last_alert_count=self.last_alert_count,
                 channels_ok=dict(self.last_channels_ok),
             )
-            return st.__dict__
+            return {**st.__dict__, "database": alert_store.status()}
+
+    @staticmethod
+    def _alert_key(point, channel):
+        zid = point.get("ua_id") or point.get("id")
+        if not zid:
+            raise ValueError("UA sem identificador")
+        return f"{channel or point.get('hazard', 'geo')}:{zid}"
 
     # ------------------------------------------------------------- internos
     def _select_alerts(self, points: List[Dict[str, Any]],
@@ -151,10 +221,10 @@ class Notifier:
             active_ids = set()
             for p in points:
                 rd = p.get("rd")
+                alert_key = self._alert_key(p, channel)
                 if p.get("source") == "NO_DATA" or rd is None:
+                    active_ids.add(alert_key)
                     continue
-                zid = p.get("id")
-                alert_key = f"{channel or p.get('hazard', 'geo')}:{zid}"
                 if rd >= self.threshold:
                     active_ids.add(alert_key)
                     prev = self._last_alert.get(alert_key)
@@ -164,7 +234,6 @@ class Notifier:
                         or (now - prev[1]) >= self.cooldown  # lembrete
                     )
                     if fire:
-                        self._last_alert[alert_key] = (rd, now)
                         alerts.append(p)
             prefix = f"{channel}:" if channel else None
             for key in list(self._last_alert):
@@ -179,7 +248,7 @@ class Notifier:
 
     def _dispatch(self, alerts: List[Dict[str, Any]],
                   summary: Dict[str, Any], now: datetime,
-                  channel: Optional[str] = None) -> None:
+                  channel: Optional[str] = None) -> Dict[str, bool]:
         subject, body = self._format(alerts, summary, now, channel=channel)
         channels_ok: Dict[str, bool] = {}
         if self.enabled_email:
@@ -195,6 +264,7 @@ class Notifier:
                 self.last_sent_at = now
         log.warning("ALERTA: %d zona(s) RD>=%d | canais=%s",
                     len(alerts), self.threshold, channels_ok)
+        return channels_ok
 
     def _format(self, alerts: List[Dict[str, Any]],
                 summary: Dict[str, Any], now: datetime,
@@ -217,18 +287,19 @@ class Notifier:
             f"{n} zona(s) com Risco Dinamico >= {self.threshold}:",
             "",
         ]
-        for p in alerts[:50]:
-            km = p.get("km")
+        for p in alerts:
+            km = p.get("km_inicial", p.get("km"))
             km_txt = f" km {km}" if km is not None else ""
+            zid = p.get("ua_id") or p.get("id")
+            road = p.get("sigla_rodovia", p.get("rodovia", ""))
+            ra = p.get("RAGEO") if channel == "geo" else p.get("RAHID")
             linhas.append(
-                f"- [{p.get('nome', p.get('id'))}] {p.get('rodovia', '')}"
+                f"- [{zid}] {road}"
                 f"{km_txt} | RD{p.get('rd')} ({p.get('nivel', '')}) "
-                f"| RA{p.get('ra')} "
+                f"| RA{ra if ra is not None else p.get('ra')} "
                 f"| chuva24h={p.get('ac24h_mm')}mm 96h={p.get('ac96h_mm')}mm "
-                f"| {p.get('region_name', '')}"
+                f"| {p.get('regiao_nome', p.get('region_name', ''))}"
             )
-        if n > 50:
-            linhas.append(f"... (+{n - 50} zonas)")
         return subject, "\n".join(linhas)
 
     def _send_email(self, subject: str, body: str) -> bool:
@@ -275,19 +346,32 @@ class Notifier:
                 "threshold": self.threshold,
                 "zones": [
                     {
-                        "id": p.get("id"), "nome": p.get("nome"),
-                        "rodovia": p.get("rodovia"), "km": p.get("km"),
+                        "ua_id": p.get("ua_id") or p.get("id"),
+                        "id": p.get("ua_id") or p.get("id"),
+                        "nome": p.get("ua_id") or p.get("nome"),
+                        "rodovia": p.get("sigla_rodovia", p.get("rodovia")),
+                        "km": p.get("km_inicial", p.get("km")),
+                        "km_inicial": p.get("km_inicial"),
+                        "km_final": p.get("km_final"),
+                        "hazard": p.get("hazard"),
+                        "RAGEO": p.get("RAGEO"),
+                        "RAHID": p.get("RAHID"),
                         "rd": p.get("rd"), "nivel": p.get("nivel"),
                         "ra": p.get("ra"),
                         "lat": p.get("lat"), "lon": p.get("lon"),
                         "ac24h_mm": p.get("ac24h_mm"),
                         "ac96h_mm": p.get("ac96h_mm"),
-                        "region": p.get("region_name"),
-                    } for p in alerts[:100]
+                        "region": p.get("regiao_nome", p.get("region_name")),
+                    } for p in alerts
                 ],
             }
             r = requests.post(self.webhook_url, json=payload, timeout=15)
-            return 200 <= r.status_code < 300
+            if not 200 <= r.status_code < 300:
+                self.last_error = f"webhook: HTTP {r.status_code}"
+                self.last_error_at = datetime.now(timezone.utc)
+                log.error("falha webhook: HTTP %d", r.status_code)
+                return False
+            return True
         except Exception as e:  # noqa: BLE001
             self.last_error = f"webhook: {e}"
             self.last_error_at = datetime.now(timezone.utc)

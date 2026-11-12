@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="csrf-token" content="{{ csrf }}">
+  <title>Tabelas do Banco · PLI-HazardTrack</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_tables.css') }}">
+  <script defer src="{{ url_for('static', filename='admin_tables.js') }}"></script>
+</head>
+<body class="admin-app database-page {% if request.args.get('embedded') == '1' %}db-embedded{% endif %}" data-api="{{ url_for('database_admin.tables_catalog') }}">
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <a href="{{ url_for('index') }}" class="sidebar-brand">
+      <span class="sidebar-brand-head">
+        <span class="sidebar-brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><path d="M8 13v8m4-6v8m4-10v8"/></svg></span>
+        <span class="sidebar-brand-name">PLI-HAZARDTRACK</span>
+      </span>
+      <span class="sidebar-brand-sub">Riscos climáticos extremos · PLI-SP</span>
+    </a>
+    <nav class="sidebar-nav" aria-label="Área restrita">
+      <a class="nav-item" href="{{ url_for('workspace.page') }}">Voltar à área restrita</a>
+      <p class="db-nav-label">Administração</p>
+      <details class="db-menu" open>
+        <summary>Tabelas do Banco <span id="db-table-count"></span></summary>
+        <label class="db-search"><span class="db-sr-only">Buscar tabela</span>
+          <input id="db-search" type="search" placeholder="Buscar tabela…" autocomplete="off">
+        </label>
+        <div id="db-menu-list" aria-label="Tabelas">Carregando tabelas…</div>
+      </details>
+    </nav>
+    <div class="sidebar-foot">
+      <a class="sidebar-link sidebar-link-back" href="{{ url_for('index') }}">Voltar ao mapa</a>
+      <a class="sidebar-link sidebar-logout" href="{{ url_for('admin.logout') }}">Sair</a>
+    </div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-header">
+      <button class="sidebar-toggle" id="db-sidebar-toggle" aria-label="Abrir menu" aria-expanded="false">☰</button>
+      <div class="header-title"><h1>Administração</h1><p>Tabelas do Banco</p></div>
+      <span class="db-session">{{ session.admin_user.full_name or session.admin_user.username }}</span>
+    </header>
+    <main class="db-content" id="db-content" aria-busy="true">
+      <header class="db-heading">
+        <h2 id="db-title">Tabelas do Banco</h2>
+        <p id="db-description">Selecione uma tabela no menu.</p>
+      </header>
+      <div id="db-feedback" role="status" hidden></div>
+      <section id="db-table-section" aria-labelledby="db-title" hidden>
+        <div class="db-table-shell">
+          <form class="db-filter-bar" id="db-filter">
+            <label for="db-column">Filtro:</label>
+            <select id="db-column" aria-label="Coluna do filtro"><option value="">— Coluna —</option></select>
+            <input id="db-value" aria-label="Valor do filtro" placeholder="Selecione a coluna" disabled>
+            <label class="db-empty"><input id="db-empty" type="checkbox" disabled> Vazias</label>
+            <button class="db-icon" id="db-invert" type="button" title="Inverter filtro" aria-label="Inverter filtro" aria-pressed="false">⇄</button>
+            <button class="db-icon" id="db-clear" type="button" title="Limpar filtros" aria-label="Limpar filtros">⌫</button>
+            <button type="submit" class="db-sr-only">Aplicar filtro</button>
+          </form>
+          <div class="db-table-wrap" tabindex="0" aria-label="Tabela com rolagem horizontal">
+            <table class="db-data-table"><thead id="db-head"></thead><tbody id="db-body"></tbody></table>
+          </div>
+        </div>
+        <div class="db-actions" aria-label="Ações da tabela">
+          <button class="db-icon" id="db-reload" title="Recarregar" aria-label="Recarregar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17a8 8 0 0 0 14 1M20 7A8 8 0 0 0 5 6"/></svg></button>
+          <button class="db-icon db-add" id="db-add" title="Adicionar registro" aria-label="Adicionar registro" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="db-icon db-edit" id="db-edit" title="Editar selecionado" aria-label="Editar selecionado" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 5 5L8 21H3v-5ZM13 6l5 5"/></svg></button>
+          <button class="db-icon db-delete" id="db-delete" title="Excluir selecionados" aria-label="Excluir selecionados" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg></button>
+        </div>
+        <div class="db-table-footer">
+          <nav class="db-pagination" aria-label="Paginação">
+            <button id="db-first" aria-label="Primeira página">≪</button>
+            <button id="db-prev" aria-label="Página anterior">‹</button>
+            <span id="db-page"></span>
+            <button id="db-next" aria-label="Próxima página">›</button>
+            <button id="db-last" aria-label="Última página">≫</button>
+          </nav>
+          <p id="db-counter" aria-live="polite"></p>
+        </div>
+      </section>
+    </main>
+  </div>
+  <dialog id="db-editor" aria-labelledby="db-editor-title">
+    <form id="db-editor-form">
+      <header><h2 id="db-editor-title"></h2><button type="button" data-close aria-label="Fechar">×</button></header>
+      <p class="db-editor-note">Use o valor padrão para campos automáticos. NULL representa ausência de valor.</p>
+      <div id="db-fields"></div>
+      <p id="db-editor-error" role="alert"></p>
+      <footer><button type="button" data-close>Cancelar</button><button id="db-save" type="submit">Salvar</button></footer>
+    </form>
+  </dialog>
+  <dialog id="db-confirm" aria-labelledby="db-confirm-title">
+    <form id="db-delete-form">
+      <header><h2 id="db-confirm-title">Excluir registros</h2></header>
+      <p id="db-delete-message"></p><p id="db-delete-error" role="alert"></p>
+      <footer><button type="button" id="db-delete-cancel">Cancelar</button><button type="submit" id="db-delete-submit">Excluir</button></footer>
+    </form>
+  </dialog>
+</body>
+</html>

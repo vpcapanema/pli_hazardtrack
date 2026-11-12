@@ -14,6 +14,11 @@
   }
 
   const PANEL_META = {
+    territorio: ["Território e camadas", "UAs, camadas oficiais e ampliação do monitoramento"],
+    alertas: ["Alertas", "Histórico, evolução e entregas"],
+    operacao: ["Gestão operacional", "Instituições, competências e contatos operacionais"],
+    integracoes: ["Comunicação e integrações", "Regras, simulação e acesso automatizado aos alertas"],
+    administracao: ["Administração", "Domínios, acesso e auditoria"],
     visao: ["Visão geral", "Panorama dos dois módulos de monitoramento"],
     saude: ["Saúde dos sistemas", "Semáforos, pipelines e fontes de dados"],
     controles: [
@@ -21,7 +26,7 @@
       "Ligar ou desligar cada sistema (default: ligado)",
     ],
     estatisticas: ["Estatísticas", "Distribuição atual dos níveis monitorados"],
-    analytics: ["Analytics", "Evolução do risco, chuva e qualidade do dado"],
+    analytics: ["Análises", "Evolução do risco, chuva e qualidade do dado"],
     relatorios: ["Relatórios", "Exportação inteligente para operação e auditoria"],
     sistema: ["Sistema técnico", "Runtime, dependências e diagnóstico completo"],
   };
@@ -80,6 +85,13 @@
 
   const REPORTS = [
     {
+      id: "alertas",
+      title: "Histórico de alertas",
+      desc: "Até 200 episódios recentes, eventos e tentativas de entrega. Histórico completo pela API paginada.",
+      fmt: "JSON",
+      icon: "{ }",
+    },
+    {
       id: "operacional",
       title: "Relatório operacional",
       desc: "HTML imprimível com KPIs, distribuição RD/RF e tops.",
@@ -113,9 +125,11 @@
   let diagnostics = null;
   let analyticsHours = 24;
   let activePanel = "visao";
+  let refreshing = false;
+  const standalonePanels = new Set(['territorio','alertas','operacao','integracoes','administracao']);
 
-  document.querySelectorAll(".nav-item").forEach((btn) => {
-    btn.addEventListener("click", () => showPanel(btn.dataset.panel));
+  document.querySelectorAll(".nav-item[data-panel]").forEach((btn) => {
+    btn.addEventListener("click", event => { event.preventDefault(); showPanel(btn.dataset.panel); });
   });
   document.getElementById("btn-refresh").addEventListener("click", refresh);
   document
@@ -137,7 +151,7 @@
   } catch (e) { /* storage indisponível */ }
   syncRangeButtons();
 
-  const hash = location.hash.replace("#", "");
+  const hash = window.__ADMIN_SECTION__ || location.hash.replace("#", "");
   if (hash && PANEL_META[hash]) showPanel(hash);
   else showPanel("visao");
 
@@ -178,6 +192,7 @@
     try {
       const res = await fetch(appPath(`/admin/api/refresh/${system}`), {
         method: "POST",
+        headers: {"X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || ''},
         credentials: "same-origin",
       });
       if (res.status === 401) {
@@ -266,11 +281,23 @@
     const meta = PANEL_META[id] || ["Admin", ""];
     document.getElementById("panel-title").textContent = meta[0];
     document.getElementById("panel-subtitle").textContent = meta[1];
-    location.hash = id;
+    if (window.__ADMIN_SECTION__) {
+      const link = document.querySelector(`.nav-item[data-panel="${id}"]`);
+      if (link && location.pathname !== new URL(link.href).pathname) history.pushState({panel:id}, '', link.href);
+      document.title = `${meta[0]} · PLI-HazardTrack`;
+    } else location.hash = id;
     document.getElementById("admin-sidebar").classList.remove("open");
     // Gráficos medem a largura do card: refaz ao exibir a seção.
     renderPanel(id);
+    if ((!dashboard && !standalonePanels.has(id)) || (id === 'sistema' && !diagnostics)) refresh();
+    document.dispatchEvent(new CustomEvent('hazardtrack:panel', {detail:id}));
   }
+  window.addEventListener('popstate', () => {
+    if (window.__ADMIN_SECTION__) {
+      const section = location.pathname.split('/').filter(Boolean).pop();
+      showPanel(PANEL_META[section] ? section : 'visao');
+    }
+  });
 
   function renderPanel(id) {
     if (!dashboard) return;
@@ -280,23 +307,33 @@
   }
 
   async function refresh() {
+    if (refreshing || standalonePanels.has(activePanel)) return;
+    refreshing = true;
     try {
       const [dashRes, diagRes] = await Promise.all([
         fetch(appPath(`/admin/api/dashboard?hours=${analyticsHours}`), {
           credentials: "same-origin",
         }),
-        fetch(appPath("/admin/api/diagnostics"), { credentials: "same-origin" }),
+        activePanel === 'sistema'
+          ? fetch(appPath("/admin/api/diagnostics"), { credentials: "same-origin" })
+          : Promise.resolve(null),
       ]);
       if (dashRes.status === 401) {
         window.location = appPath("/admin/login");
         return;
       }
+      if (!dashRes.ok) {
+        const failure = await dashRes.json();
+        throw new Error(failure.error || "Falha ao consultar o painel");
+      }
       dashboard = await dashRes.json();
-      if (diagRes.ok) diagnostics = await diagRes.json();
+      if (diagRes?.ok) diagnostics = await diagRes.json();
       renderAll();
     } catch (e) {
       console.warn("admin refresh:", e);
-    }
+      document.getElementById("updated-at").textContent =
+        "Falha na atualização: " + e.message;
+    } finally { refreshing = false; }
   }
 
   async function setAnalyticsRange(hours) {
@@ -312,11 +349,17 @@
         window.location = appPath("/admin/login");
         return;
       }
-      if (!res.ok || !dashboard) return;
+      if (!res.ok) {
+        const failure = await res.json();
+        throw new Error(failure.error || "Falha ao consultar Analytics");
+      }
+      if (!dashboard) return;
       dashboard.analytics = await res.json();
       renderAnalytics();
     } catch (e) {
       console.warn("analytics range:", e);
+      document.getElementById("updated-at").textContent =
+        "Falha no Analytics: " + e.message;
     }
   }
 
@@ -763,7 +806,7 @@
     kpi.innerHTML = "";
     const cards = [
       ["RD máximo", ov.geodinamico.max_rd, RD_LABELS[ov.geodinamico.max_rd] || ov.geodinamico.max_rd_label, "geo"],
-      ["UAs monitoradas", fmtNum(ov.geodinamico.uas_monitoradas), geo.uas_geo + " encosta · " + geo.uas_hidro + " inundação", "geo"],
+      ["UAs físicas", fmtNum(geo.uas_unique), geo.uas_geo + " encosta · " + geo.uas_hidro + " inundação", "geo"],
       ["Alertas RD (3+4)", fmtNum(ov.geodinamico.alertas_rd), "unidades em Alerta ou Alerta Máximo", "geo warn"],
       ["Trechos fogo", fmtNum(ov.risco_fogo.total_trechos), "malha DER monitorada", "fire"],
       ["RF alto/crítico", fmtNum(ov.risco_fogo.alertas_rf), "trechos nas duas classes superiores", "fire warn"],
@@ -828,7 +871,7 @@
     const note = document.getElementById("cycle-history-note");
     if (note) {
       note.textContent = ana.ops?.persisted_total
-        ? `${fmtNum(ana.ops.persisted_total)} ciclos persistidos em disco`
+        ? `${fmtNum(ana.ops.persisted_total)} ciclos persistidos · ${ana.ops.storage || "disco"}`
         : "";
     }
     if (!rows.length) {
@@ -893,6 +936,8 @@
           ["Horas válidas (96 h)", block.data_quality.files_ok ?? "—"],
           ["Faltando 24 h", block.data_quality.missing_24h ?? "—"],
           ["Faltando 96 h", block.data_quality.missing_96h ?? "—"],
+          ["Histórico persistente", dashboard.analytics?.ops?.storage || "disco"],
+          ["Banco operacional", dashboard.health.database?.connected ? "Conectado" : (dashboard.health.database?.configured ? "Indisponível" : "Não configurado")],
         ], 2)
       );
       renderGaugeCorrection(root, block.gauge_correction);
@@ -981,7 +1026,7 @@
       const res = await fetch(appPath("/admin/api/alert-controls"), {
         method: "POST",
         credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || '' },
         body: JSON.stringify({ system, enabled }),
       });
       if (res.status === 401) {
@@ -1680,6 +1725,9 @@
         ["Memória RSS", ((p.process || {}).memory_rss_mb || "—") + " MB"],
         ["eccodes", (p.dependencies || {}).eccodes_lib_loaded ? "OK" : "FALHA"],
         ["Uptime", fmtSec((p.process || {}).uptime_s)],
+        ["Banco operacional", diagnostics.database?.connected ? "PostgreSQL conectado" : (diagnostics.database?.configured ? "Indisponível" : "Não configurado")],
+        ["Versão do esquema", diagnostics.database?.schema_version ?? "—"],
+        ["Histórico de ciclos", dashboard?.analytics?.ops?.storage || "disco"],
       ], 2)
     );
 

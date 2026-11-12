@@ -1,0 +1,1376 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta name="keywords" content="estoque, emendas, parcerias, convênios, prefeitura, Caraguatatuba">
+    <meta name="author" content="Secretaria de Planejamento Estratégico">
+    <meta http-equiv="Content-Language" content="pt-BR">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta charset="UTF-8">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="icon" type="image/png" href="/static/globals/images/favicon.f6f2f879136c.png">
+    
+    <link rel="stylesheet" href="/static/globals/css/style.244f0a4c91fd.css">
+    
+    
+</head>
+
+<body>
+    <script>
+        function adjustFontSize(action) {
+            const html = document.documentElement;
+            let size = parseFloat(localStorage.getItem('fontSize')) || 16;
+
+            if (action === 'increase') size = Math.min(30, size + 2);
+            else if (action === 'reset') size = 16;
+
+            html.style.fontSize = size + "px";
+            localStorage.setItem('fontSize', size);
+        }
+
+        function toggleContrast() {
+            document.body.classList.toggle('high-contrast');
+            localStorage.setItem('highContrast', document.body.classList.contains('high-contrast'));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedSize = localStorage.getItem('fontSize');
+            if (savedSize) {
+                document.documentElement.style.fontSize = savedSize + "px";
+            }
+
+            if (localStorage.getItem('highContrast') === 'true') {
+                document.body.classList.add('high-contrast');
+            }
+        });
+    </script>
+
+    <div class="libras-widget-container no-print">
+        <div vw class="enabled localizacao">
+            <div vw-access-button class="active"></div>
+            <div vw-plugin-wrapper>
+                <div class="vw-plugin-top-wrapper"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>
+        new window.VLibras.Widget('https://vlibras.gov.br/app');
+    </script>
+
+    
+
+<nav class="navbar navbar-expand-lg navbar-dark cor-primary shadow-sm position-relative rounded-bottom pb-1">
+    <div class="container">
+        <div class="accessibility-controls position-absolute" style="right: 15px; top: 50%; transform: translateY(-50%);">
+            <div class="d-flex gap-2">
+                <button class="btn btn-link text-white p-0 no-print" 
+                        onclick="adjustFontSize('increase')" 
+                        title="Aumentar fonte"
+                        aria-label="Aumentar tamanho do texto">
+                    <i class="bi bi-zoom-in fs-5"></i>
+                </button>
+                
+                <button class="btn btn-link text-white p-0 no-print" 
+                        onclick="adjustFontSize('reset')" 
+                        title="Tamanho normal"
+                        aria-label="Redefinir tamanho do texto">
+                    <i class="bi bi-zoom-out fs-5"></i>
+                </button>
+                
+                <button class="btn btn-link text-white p-0 no-print" 
+                        onclick="toggleContrast()" 
+                        title="Alto contraste"
+                        aria-label="Alternar alto contraste">
+                    <i class="bi bi-brightness-high fs-5"></i>
+                </button>
+            </div>
+        </div>
+
+        <a class="navbar-brand d-flex align-items-center" href="/planos-municipais">
+            <img src="/static/globals/images/brasao.4a0d2df51b83.png" 
+                 alt="Brasão da Prefeitura de Caraguatatuba" 
+                 height="60" 
+                 class="d-inline-block align-top">
+            <div class="ms-3 text-white">
+                <h4 class="mb-0 fw-bold">Prefeitura de Caraguatatuba</h4>
+                <small class="d-none d-sm-block">Secretaria de Planejamento Estratégico e Desenvolvimento</small>
+                <small class="d-block d-sm-none">SEPLAN</small>
+            </div>
+        </a>
+    </div>
+</nav>
+
+<style>
+.eixo-card {
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+    transition: all .2s ease;
+    background: white;
+}
+
+.eixo-card:hover {
+    transform: translateY(-2px);
+}
+
+.eixo-header {
+    background: white !important;
+    padding: 1rem 1.2rem;
+}
+
+.accordion-button:not(.collapsed) {
+    background: #eef4ff;
+    color: #0d6efd;
+    box-shadow: none;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+}
+
+.plano-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    text-decoration: none;
+
+    padding: 14px 18px;
+    margin-bottom: 10px;
+
+    border-radius: 12px;
+
+    background: white;
+    border: 1px solid #edf0f5;
+
+    transition: all .2s ease;
+}
+
+.plano-link:hover {
+    background: #f8fbff;
+    border-color: #cfe2ff;
+    transform: translateX(4px);
+}
+
+.plano-link span {
+    color: #343a40;
+    font-weight: 500;
+}
+
+.search-wrapper {
+    max-width: 550px;
+    margin: auto;
+}
+
+.search-box {
+    border-radius: 50px;
+    overflow: hidden;
+    background: white;
+}
+
+.search-box input {
+    border: none;
+    padding: 16px 22px;
+}
+
+.search-box input:focus {
+    box-shadow: none;
+}
+
+.search-box button {
+    padding: 0 25px;
+}
+
+.badge-planos {
+    border-radius: 50px;
+    font-size: .75rem;
+    padding: 6px 10px;
+}
+
+.item-plano.hidden {
+    display: none !important;
+}
+
+.footer-custom {
+    border-top: 1px solid #e9ecef;
+}
+
+@media (max-width: 768px) {
+    .accordion-button {
+        font-size: .95rem;
+    }
+    .plano-link {
+        padding: 12px 14px;
+    }
+}
+</style>
+
+    
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h1 class="fw-bold text-primary">
+            PLANOS MUNICIPAIS
+        </h1>
+        <div class="search-wrapper">
+            <label for="searchInput" class="visually-hidden">Pesquisar</label>
+            <div class="input-group input-group-lg shadow-sm search-box">
+                <input type="text"
+                       id="searchInput"
+                       class="form-control"
+                       placeholder="Pesquise o plano municipal...">
+                <button class="btn cor-primary btn-serv text-white"
+                        type="button"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        title="Pesquise por qualquer plano municipal">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="accordion" id="accordionEixos">
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de saúde">
+            <h2 class="accordion-header"
+                id="heading1">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse1"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Saúde
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                9
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse1"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2026/06/PAS-Programacao-Anual-de-Saude-2027.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                PAS- Programação Anual de Saúde - 2027
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/07/PAS-Programacao-Anual-de-Saude-2026.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                PAS – Programação Anual de Saúde – 2026
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/07/20-PLANO-MUNICIPAL-DE-SAUDE-2026-2029.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Saúde 2026 – 2029
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/06/PAS-Programacao-Anual-de-Saude-2025.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                PAS – Programação Anual de Saúde – 2025
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2023/04/PAS-Programacao-Anual-de-Saude-2024.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                PAS – Programação Anual de Saúde – 2024
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2023/06/PAS-2023.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                PAS – Programação Anual de Saúde – 2023
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2022/09/PAS-Programacao-Anual-de-Saude-2022.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                PAS – Programação Anual de Saúde – 2022
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2021/11/Plano-Municipal-de-Saude-2022-2025-alterado-08.09.2021.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Saúde 2022 – 2025
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2021/08/Plano-Municipal-de-Saude-2018-2021.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Saúde 2018 – 2021
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de assistência social">
+            <h2 class="accordion-header"
+                id="heading2">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse2"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Assistência Social
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                4
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse2"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2026/08/PLANO-MUNICIPAL-DE-ASSISTECIA-SOCIAL-2026.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Assistência Social - 2026
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/08/PLANO-MUNICIPAL-DE-ASSISTECIA-SOCIAL-2025.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Assistência Social - 2025
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/03/PLANO-MUNICIPAL-DE-ASSISTECIA-SOCIAL-2024_.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Assistência Social - 2024
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/2025/01/plano-municipal-de-assistencia-social-historico/"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Assistência Social - 2023
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano preventivo de defesa civil">
+            <h2 class="accordion-header"
+                id="heading3">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse3"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Preventivo de Defesa Civil
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                8
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse3"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/11/PPDC-2025-2026-Plano-de-Defesa-Civil.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Preventivo de Defesa Civil - 2026
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/11/Prorroga-PPDC-2024-2025-Plano-de-Defesa-Civil.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Prorrogação da Vigência do Plano de Defesa Civil 2025
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/11/PPDC-2024-2025-Plano-de-Defesa-Civil.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Preventivo de Defesa Civil - 2025
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/DECRETO-1951-2024.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Prorrogação da Vigência do Plano de Defesa Civil 2024
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/PPDC-2023-2024-Plano-de-Defesa-Civil.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Preventivo de Defesa Civil - 2024
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/Prorroga-PPDC-2022-2023-Plano-de-Defesa-Civil.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Prorrogação da Vigência do Plano de Defesa Civil 2023
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/PPDC-2022-2023-Plano-de-Defesa-Civil.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Preventivo de Defesa Civil - 2023
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/PPDC-2021-2022-Plano-de-Defesa-Civil.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Preventivo de Defesa Civil - 2022
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano de contingência e proteção de defesa civil de caraguatatuba">
+            <h2 class="accordion-header"
+                id="heading4">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse4"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano de Contingência e Proteção de Defesa Civil de Caraguatatuba
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse4"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://caraguatatuba.legislacaocompilada.com.br/norma.aspx?id=36638&amp;tipo=1&amp;numero=2811&amp;ano=2025&amp;interno=0"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano de Contingência e Proteção de Defesa Civil de Caraguatatuba
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano diretor de tecnologia da informação">
+            <h2 class="accordion-header"
+                id="heading5">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse5"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Diretor de Tecnologia da Informação
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse5"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://caraguatatuba.legislacaocompilada.com.br/norma.aspx?id=36668&amp;tipo=6&amp;interno=0"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Diretor de Tecnologia da Informação
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de contingência para arboviroses">
+            <h2 class="accordion-header"
+                id="heading6">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse6"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Contingência para Arboviroses
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                5
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse6"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2026/06/Plano-de-Contingencia-de-Arboviroses-2025-2026.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Contingência para Arboviroses  2025-2026
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/03/Plano-de-Contingencia-de-Arboviroses-2024-2025.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Contingência para Arboviroses 2024-2025
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/Plano-de-Contingencia-Dengue-2023-2024.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Contingência para Arboviroses 2023-2024
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/Plano-de-Contingencia-Dengue-2022-2023.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Contingência para Arboviroses 2022-2023
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/Plano-de-Contingencia-Dengue-2021-2022.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Contingência para Arboviroses 2021-2022
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de cultura">
+            <h2 class="accordion-header"
+                id="heading7">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse7"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Cultura
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                2
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse7"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://caraguatatuba.legislacaocompilada.com.br/norma.aspx?id=35099&amp;interno=0"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Cultura – 2025
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/Arquivo-02-Plano-Municipal-de-Cultura_.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Cultura – 2019
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal pela primeira infância">
+            <h2 class="accordion-header"
+                id="heading8">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse8"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal pela Primeira Infância
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse8"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/secretaria-municipal-de-educacao/primeira-infancia/"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal pela Primeira Infância
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano diretor de turismo">
+            <h2 class="accordion-header"
+                id="heading9">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse9"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Diretor de Turismo
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                2
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse9"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/2025/01/plano-diretor-de-turismo-hisorico/"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Diretor de Turismo - 2018
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/servicos/servicos-a-empresa/plano-diretor-de-turismo/"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Diretor de Turismo - Revisão 2024
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano diretor">
+            <h2 class="accordion-header"
+                id="heading10">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse10"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Diretor
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse10"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/servicos/servicos-a-empresa/plano-diretor/"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Diretor Vigente
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano preventivo de ressaca da defesa civil">
+            <h2 class="accordion-header"
+                id="heading11">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse11"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Preventivo de Ressaca da Defesa Civil
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                2
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse11"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/07/Plano-Preventivo-de-Ressacas-Decreto-1336-2021.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Prorrogação da vigência do Plano de Ressaca da Defesa Civil
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/Plano-Preventivo-de-Ressacas-Decreto-1366-2020.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Preventivo de Ressaca da Defesa Civil
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de saneamento básico">
+            <h2 class="accordion-header"
+                id="heading12">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse12"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Saneamento Básico
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                2
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse12"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://semil.sp.gov.br/urae1/wp-content/uploads/sites/26/2025/02/Plano-Regional-Saneamento-Basico-URAE-1-Sudeste-Atualizado_Completo_final.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Saneamento Básico - Deliberação CD URAE 1-Sudeste nº 02/2024
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2024/04/Plano-Municipal-da-Saneamento-Basico-Agua-e-Esgotamento-Sanitario.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Saneamento Básico
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de educação">
+            <h2 class="accordion-header"
+                id="heading13">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse13"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Educação
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse13"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/secretaria-municipal-de-educacao/plano-municipal-de-educacao/"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Educação e Resultados
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de gestão integrada de resíduos sólidos">
+            <h2 class="accordion-header"
+                id="heading14">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse14"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Gestão Integrada de Resíduos Sólidos
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse14"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/servicos/servicos-ao-cidadao/pmgirs/"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Gestão Integrada de Resíduos Sólidos
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="plano municipal de habitação">
+            <h2 class="accordion-header"
+                id="heading15">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse15"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Plano Municipal de Habitação
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse15"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2022/10/Plano-de-Habitacao.pdf"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Plano Municipal de Habitação
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="código de posturas">
+            <h2 class="accordion-header"
+                id="heading16">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse16"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Código de Posturas
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse16"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://caraguatatuba.legislacaocompilada.com.br/norma.aspx?id=9623"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Código de Posturas
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <div class="accordion-item eixo-card shadow-sm mb-3"
+             data-eixo="código de edificações">
+            <h2 class="accordion-header"
+                id="heading17">
+                <button class="accordion-button collapsed eixo-header"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#collapse17"
+                        aria-expanded="false">
+                    <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                        <div>
+                            <span class="fw-semibold">
+                                Código de Edificações
+                            </span>
+                            <span class="badge bg-primary badge-planos ms-2">
+                                1
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse17"
+                 class="accordion-collapse collapse"
+                 data-bs-parent="#accordionEixos">
+                <div class="accordion-body pt-2">
+                    
+                    <a href="https://caraguatatuba.legislacaocompilada.com.br/norma.aspx?id=3262"
+                       target="_blank"
+                       class="item-plano plano-link">
+                        <div class="d-flex align-items-center">
+                            <span>
+                                Código de Edificações
+                            </span>
+                        </div>
+                        <i class="bi bi-box-arrow-up-right text-muted"></i>
+                    </a>
+                    
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("searchInput");
+    const normalizeText = (text) => {
+        return text
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, ' ')
+            .trim();
+    };
+    searchInput.addEventListener("keyup", function () {
+        const query = normalizeText(this.value);
+        const sections = document.querySelectorAll(".accordion-item");
+        sections.forEach(section => {
+            const eixo = normalizeText(
+                section.dataset.eixo || ""
+            );
+            const items = section.querySelectorAll(".item-plano");
+            let hasVisible = false;
+            items.forEach(item => {
+                const text = normalizeText(
+                    item.textContent
+                );
+                const match =
+                    query === "" ||
+                    text.includes(query) ||
+                    eixo.includes(query);
+                item.classList.toggle(
+                    "hidden",
+                    !match
+                );
+                if (match) {
+                    hasVisible = true;
+                }
+            });
+            if (hasVisible) {
+                section.style.display = "block";
+                const collapseEl =
+                    section.querySelector(".accordion-collapse");
+                const bsCollapse =
+                    bootstrap.Collapse.getInstance(collapseEl) ||
+                    new bootstrap.Collapse(collapseEl, {
+                        toggle: false
+                    });
+                bsCollapse.show();
+            } else {
+                section.style.display = "none";
+            }
+        });
+    });
+});
+</script>
+
+
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/pt-br.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function(tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+    
+    <script src="/static/globals/js/script.22c0a5459209.js"></script>
+
+    
+
+    <style>
+    @media screen and (min-width: 768px) {
+        #globalModal { --bs-modal-width: 50vw !important; }
+        #globalModal .modal-content { border-radius: 0.5rem; width: 50vw !important; }
+    }
+</style>
+<div class="modal fade" id="globalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Carregando...</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body" id="globalModalBody">
+                </div>
+        </div>
+    </div>
+</div>
+    
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="toast-sucesso" class="toast align-items-center text-white bg-success border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-sucesso-body">
+                    Operação realizada com sucesso!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        
+        <div id="toast-erro" class="toast align-items-center text-white bg-danger border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-erro-body">
+                    Ocorreu um erro!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+        
+        <div id="toast-aviso" class="toast align-items-center text-white bg-warning border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-aviso-body">
+                    Atenção!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+    
+    
+<footer style="text-align: center; border-top: 1px solid #e9ecef;">
+  <div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-center">
+      <p class="text-center text-muted text-primary mb-0">
+          <i class="text-footer bi bi-code-slash m-3">
+          </i>
+          Desenvolvido pela Secretaria de Planejamento Estratégico e Desenvolvimento
+          <br>
+          Divisão de Estatística e Inovação
+      </p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

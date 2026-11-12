@@ -481,20 +481,20 @@ via API ou propriedades aninhadas `previsao[D+1]..`.
 
 ## 7. Integracao runtime (Flask)
 
-### 7.1 Modulo a criar: `core/fire_risk.py`
+### 7.1 Modulo implementado: `core/fire_risk.py`
 
 Responsabilidades **somente leitura**:
 
 - Carregar `processed/risco_trechos_der.gpkg` ou JSON latest.
 - Cache em memoria com reload por mtime (mesmo padrao de `zones.py`).
 - Expor funcoes:
-  - `get_fire_risk_snapshot(horizonte="observado")`
+  - `get_fire_risk_snapshot()`
   - `get_fire_risk_by_trecho(trecho_id, horizonte=...)`
   - `get_fire_risk_geojson(horizonte=...)`
 
 Sem download HTTP no request cycle.
 
-### 7.2 Endpoints REST planejados (`app.py`)
+### 7.2 Endpoints REST implementados (`app.py`)
 
 | Metodo | Rota | Descricao |
 | --- | --- | --- |
@@ -521,8 +521,8 @@ Runner automatico **dentro do backend**, isolado do ciclo MERGE, em
 3. **Boot catch-up**: no start, se ja existe produto com a data de hoje,
    apenas registra o marker e entra em modo polling; se estiver defasado,
    roda o pipeline em background sem bloquear o boot do gunicorn.
-4. **Isolamento e seguranca**: subprocess evita que download/rasterio/
-   geopandas derrubem o web worker; `data/queimadas/metadata/auto_runner.json`
+4. **Execucao separada**: subprocess separa o trabalho do request HTTP,
+   mas compartilha recursos do container; `data/queimadas/metadata/auto_runner.json`
    guarda o ultimo arquivo processado; lock em arquivo
    (`.auto_runner.lock`) evita execucoes concorrentes entre workers do
    gunicorn. `core/fire_risk.py` recarrega o cache por mtime apos cada
@@ -548,9 +548,9 @@ recálculo local futuro.
 
 ### 7.4 Frontend (`static/app.js`)
 
-Camada nova **independente**:
+Camada implementada **independente**:
 
-- Nome sugerido: `Risco de queimadas (trechos DER-SP)`.
+- Camada: `Risco de queimadas (trechos DER-SP)`.
 - Estilo por `rf_classe` (paleta INPE: verde → marrom).
 - Popup: rodovia, km, rf_valor, classe, horizonte, data_alvo.
 - **Nao** misturar simbologia RD (0-4 DER-SP) com RF INPE (5 classes).
@@ -565,7 +565,7 @@ Toggle de horizonte: observado / D+1 / D+2 / D+3.
 ### 8.1 Bootstrap inicial (uma vez)
 
 ```cmd
-cd D:\REPOSITORIOS\PLI-HazardTrack
+cd R:\pli_hazardtrack
 
 :: 1. Base estatica
 python ferramentas/queimadas/01_prepare_base_layers.py
@@ -579,14 +579,14 @@ python ferramentas/queimadas/07_export_public_layers.py
 ### 8.2 Rotina diaria
 
 ```cmd
-python ferramentas/queimadas/05_compute_rf_grid.py --date today
-python ferramentas/queimadas/06_aggregate_to_der_segments.py --date today
-python ferramentas/queimadas/07_export_public_layers.py --date today
+python ferramentas/queimadas/05_compute_rf_grid.py --date YYYY-MM-DD
+python ferramentas/queimadas/06_aggregate_to_der_segments.py --date YYYY-MM-DD
+python ferramentas/queimadas/07_export_public_layers.py --date YYYY-MM-DD
 ```
 
 ### 8.3 Pos-deploy
 
-1. Definir `QUEIMADAS_ENABLED=1`.
+1. Definir `QUEIMADAS_AUTO=1`.
 2. Confirmar arquivos em `static/data/queimadas/`.
 3. Hit em `/api/public/fire-risk/snapshot`.
 4. Validar mapa web.
@@ -656,10 +656,10 @@ Use esta lista como definicao de pronto:
 - [x] `core/fire_risk.py` le produto sem download no ciclo HTTP
 - [x] Endpoints `/api/public/fire-risk/*` registrados em `app.py`
 - [x] Camada mapa e popup em `static/app.js`
-- [x] Testes `tests/test_fire_risk.py` passando
+- [ ] Executar `tests/test_fire_risk.py` na versao a validar
 - [x] `metadata/manifest.json` atualizado
 - [x] Nenhuma alteracao indevida em `core/risk.py` / `aggregator.py`
-- [ ] Cron diario configurado em producao
+- [x] Scheduler interno implementado; dispensa cron externo
 - [ ] Focos INPE integrados como camada de ocorrencia/auditoria
 - [ ] Filtros especificos de queimadas em `static/query-filter.js`
 

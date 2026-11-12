@@ -1,6 +1,9 @@
 """
 Telemetria persistente dos ciclos do pipeline geodinamico (painel /admin).
 
+Com HAZARDTRACK_DATABASE_URL, grava e consulta PostgreSQL via admin_store.
+O JSONL descrito abaixo e o modo local sem banco e a fonte da migracao.
+
 Cada ciclo do scheduler grava UM registro compacto (JSON por linha) em
 ``PLI_RUNTIME_DIR/cycle_telemetry.jsonl`` — na VM esse diretorio e o
 volume Docker ``pli_hazardtrack_runtime``, entao a serie sobrevive a
@@ -19,6 +22,8 @@ import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+
+from . import admin_store, alert_store
 
 log = logging.getLogger("admin_telemetry")
 
@@ -81,6 +86,9 @@ def _rewrite_locked() -> None:
 
 def record(entry: dict[str, Any]) -> None:
     """Acrescenta um ciclo; compacta o arquivo quando passa do limite."""
+    if alert_store.configured():
+        admin_store.record_telemetry([entry])
+        return
     with _lock:
         _load_locked()
         _entries.append(entry)
@@ -101,6 +109,8 @@ def load(
     limit: int | None = None,
 ) -> list[dict[str, Any]]:
     """Registros em ordem cronologica, filtrados por janela/limite."""
+    if alert_store.configured():
+        return admin_store.telemetry(hours, limit)
     with _lock:
         _load_locked()
         rows = list(_entries[-MAX_ENTRIES:])
@@ -116,6 +126,8 @@ def load(
 
 
 def count() -> int:
+    if alert_store.configured():
+        return admin_store.telemetry_count()
     with _lock:
         _load_locked()
         return len(_entries)

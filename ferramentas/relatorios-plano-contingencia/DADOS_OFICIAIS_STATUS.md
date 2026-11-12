@@ -1,69 +1,43 @@
-# Status dos Dados Oficiais no Sistema
+# Dados operacionais — situação em 12/11/2026
 
-## O que foi implementado com dados REAIS
+| Informação | Fonte e uso atual |
+|---|---|
+| UAs | 809 UAs em `data/pli-hazardtrack.gpkg`, camada `uas_area_estudo`; base oficial adotada pelo projeto |
+| RA | `RAGEO` e `RAHID` nativos por UA; não há RA fixo nem inferência por moda de trecho no runtime |
+| Regiões | Quatro polígonos/eixos exportados para `data/regioes/` |
+| Chuva em solo | API SIBH/SP Águas, DAEE/CEMADEN, via `gauge_primary.py` e `gauge_correction.py` |
+| Chuva satelital | MERGE/CPTEC-INPE com ingestão e cache RAM/disco |
+| Previsão | WRF horário CPTEC-INPE usado nas janelas geológica/hidrológica |
+| Fogo | RF oficial INPE observado e D+1 a D+3 |
+| Dados institucionais | Pessoas, instituições e usuários no SIGMA |
+| Histórico e gestão operacional | Banco `pli_hazardtrack`, versão 3 |
 
-### 1. Risco Analisado (RA) por trecho de rodovia
-**Fonte:** Relatorio 2053-R04-21 (Produto 7, Tabelas 3.3.3.1-3 e 3.3.3.1-4)
+As UAs são UTBs e setores de risco complementares, abrangendo trechos
+críticos e não críticos. A antiga afirmação de que todo ponto fora dos
+trechos críticos não tinha RA foi retirada: o runtime lá RA por UA.
+Fora da cobertura mapeada, não inventar RA nem extrapolar resultados.
 
-Trechos mapeados com RA oficial:
-- **SP-055 / UBA 06.04-CGT / Regiao 2** (km 53,6-102): RAGEO moda=1 (95/175 unidades)
-- **SP-055 / UBA 06.04-CGT / Regiao 3** (km 114-127,8): RAGEO moda=1 (27/64 unidades)
-- **SP-055 / UBA 05.04-SVC / Regiao 3** (km 128-153): RAGEO moda=4 (41/135 unidades)
-- **SP-055 / UBA 05.04-SVC / Regiao 3** (km 156-162): RAGEO moda=4 (17/48 unidades)
-- **SP-055 / UBA 05.04-SVC / Regiao 4** (km 235-238): RAGEO moda=1 (6/11 unidades)
-- **SP-098 / UBA 10.04-MCZ / Regiao 1** (km 77-98): RAGEO moda=1 (53/81 unidades)
+Totais consolidados da base:
+RAGEO {0:39, 1:396, 2:106, 3:127, 4:141};
+RAHID {0:441, 1:335, 2:19, 3:14, 4:0}.
+Não confundir totais por classe com validação operacional de alertas.
 
-Trechos hidrologicos mapeados:
-- **SP-055 / UBA 05.04-SVC / Regiao 3** (km 178,1-191,4): RAHID moda=1 (30/32)
-- **SP-055 / UBA 05.04-SVC / Regiao 4** (km 191,4-223,6): RAHID moda=0 (75/146)
-- **SP-055 / UBA 06.04-CGT / Regiao 2** (km ~93, 97, 112): RAHID variado
+O histórico técnico da reconstrução das geometrias permanece nas
+ferramentas e no AGENTS. A base atual é a adotada pelo projeto; futuras
+UAs devem preservar identificadores, atributos e parâmetros requeridos.
+A interface para inclusão de novas UAs ainda não foi implementada.
 
-### 2. Matriz RD oficial
-**Fonte:** Relatorio 2053-R04-21 (Tabela 3.3.1-2)
-Matriz RA x ICC -> RD implementada exatamente como documentado.
+## Instituições e abrangências
 
-### 3. Cenarios de teste validados
-**Fonte:** Relatorio 2053-R04-21 (item 3.3.3)
-- Cenario geologico: I=50 mm/h, Ac96h=150 mm
-- Cenario hidrologico: Ac24h=100 mm
-- Validado para todas as 4 regioes
+A migração 003 criou a estrutura de domínio, não uma carga territorial
+homologada. A coleta documental está em
+[referências de operação](../referencias-operacao/README.md).
+Concessões, unidades e competências exigem fonte e vigência; atributos
+DER da UA não determinam sozinhos o destinatário do alerta.
 
-## O que ainda NAO tem dados oficiais (SEM_DADO)
+## Limites
 
-### Rodovias secundarias
-O relatorio NAO mapeou RA para:
-- SP 131 (Ilhabela)
-- SPA 004/131, SPA 000/131
-- SP 099
-- SPA 165/055, SPA 175/055, SPI 097/055
-- SP 150, SP 148, SPA 248/055, SP 061
-- SP 066, SP 088, SP 092, SP 102, SP 043, SP 039
-- BR 101
-
-**Acao:** Sistema retorna "SEM DADO - RA nao mapeado" para estas rodovias.
-
-### Pontos fora dos trechos mapeados
-Qualquer ponto em SP-055/SP-098 fora dos km listados acima NAO tem RA oficial.
-
-## Dados que ainda precisam ser obtidos
-
-### 1. Shapefile oficial das UTBs/Setores de Risco
-**Fonte citada no relatorio:** Contratos DER 20.088-8 e 20.292-7 (IG, 2020)
-**Status:** Nao disponivel no repositorio. O sistema usa shapefile gerado a partir dos poligonos aproximados do codigo.
-**Impacto:** Baixo. Os poligonos aproximados cobrem a area corretamente.
-
-### 2. Dados de previsao meteorologica (WRF/INPE)
-**Fonte citada:** WRF do INPE (72h, 5km)
-**Status:** API do WRF nao e publica/direta. Sistema tem modulo Open-Meteo como placeholder.
-**Impacto:** Medio. Sem previsao, so ha monitoramento reativo.
-
-### 3. Dados de pluviometros DAEE
-**Fonte citada:** API DAEE (161 estacoes)
-**Status:** Modulo implementado mas nao integrado ao pipeline principal.
-**Impacto:** Baixo. MERGE/INPE e a fonte principal.
-
-## Recomendacoes
-
-1. **Prioridade ALTA:** Obter shapefile oficial DER/IG das UTBs para mapeamento preciso
-2. **Prioridade MEDIA:** Integrar API do CEMADEN ou CPTEC para previsao meteorologica
-3. **Prioridade BAIXA:** Integrar pluviometros DAEE como validacao cruzada
+A ausência de pluviômetros, de previsão ou de RA precisa ser tratada
+explicitamente conforme o pipeline. As métricas de saúde não certificam
+capacidade de antecipação de eventos ou recebimento de mensagens.
+Envios externos permanecem desligados no protótipo.

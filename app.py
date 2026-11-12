@@ -16,9 +16,12 @@ from typing import Any, Dict, List, Optional
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, Response, render_template, jsonify, request, stream_with_context
 from flask_cors import CORS
+from psycopg import Error as DatabaseError
+from psycopg_pool import PoolTimeout
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import core.env  # noqa: F401  pylint: disable=unused-import
+from core import alert_store
 from core.aggregator import state
 from core.admin import admin_bp
 from core.actions import get_summary_actions, get_protocolo_completo
@@ -173,6 +176,15 @@ app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
 )
 
 app.register_blueprint(admin_bp)
+from core.database_admin import database_bp  # noqa: E402
+app.register_blueprint(database_bp)
+from core.admin_workspace import workspace_bp  # noqa: E402
+app.register_blueprint(workspace_bp)
+from core.public_alert_feed import public_alerts_bp  # noqa: E402
+app.register_blueprint(public_alerts_bp)
+alert_store.initialize()
+from core import admin_store  # noqa: E402
+admin_store.bootstrap()
 
 
 @app.after_request
@@ -855,9 +867,15 @@ em prod."""
     except Exception:
         fire_runner = {}
     ingest_st = ingest.status()
+    try:
+        controls_state = alert_controls.get_state()
+    except (DatabaseError, PoolTimeout):
+        log.exception("Banco indisponivel no health check")
+        controls_state = {"error": "banco operacional indisponivel"}
     operational = (
         summary.get("data_status") in ("ok", "degraded")
         and bool(ingest_st.get("ready"))
+        and (not alert_store.required() or alert_store.status()["connected"])
     )
     return jsonify({
         "status": "ok" if operational else "warming",
@@ -877,10 +895,11 @@ em prod."""
         "deps": {
             "eccodes": eccodes_ok,
         },
-        "alert_controls": alert_controls.get_state(),
+        "alert_controls": controls_state,
         "fire_runner": fire_runner,
         "ingest": ingest_st,
         "notifier": _notifier_status(),
+        "database": alert_store.status(),
     })
 
 

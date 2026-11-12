@@ -13,6 +13,9 @@ from core import fire_pipeline as fp
 
 class TestAlertControls(unittest.TestCase):
     def setUp(self):
+        backend = mock.patch("core.alert_store.configured", return_value=False)
+        backend.start()
+        self.addCleanup(backend.stop)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         ac.RUNTIME_DIR = Path(self.tmp.name)

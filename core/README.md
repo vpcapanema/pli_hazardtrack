@@ -1,45 +1,64 @@
-# core/ — Backend operacional
+# Backend operacional
 
-Modulos carregados em tempo de execucao por `app.py` e pelo ciclo
-MERGE → risco → alerta. **Nao inclui** scripts de geracao de dados nem
-tabelas estaticas extraidas dos relatorios (ver `ferramentas/`).
+Arquitetura atualizada em 12/11/2026. O ciclo combina chuva observada,
+previsão e risco; o módulo de fogo mantém processamento independente.
 
-## Modulos ativos
+| Módulo | Responsabilidade |
+|---|---|
+| `zones.py` | Lá 809 UAs nos GeoJSONs geológico/hidrológico, preservando atributos nativos |
+| `regions.py` | Lá polígonos e eixos das quatro regiões |
+| `merge_inpe.py` | Download e decodificação MERGE/INPE |
+| `merge_cache.py` | Cache RAM/disco de GRIBs e amostras |
+| `merge_ingest.py` | Ingestão contínua em background |
+| `gauge_primary.py` | SIBH/SP Águas como chuva prioritária com cobertura suficiente |
+| `gauge_correction.py` | Correção do MERGE nas UAs que permanecem no satélite |
+| `forecast_wrf_prec_hourly.py` | WRF horário para composição das janelas do cálculo de risco |
+| `risk.py` | CPC, ICC, matriz RA × ICC e composição observado/previsão |
+| `aggregator.py` | Snapshot e integração do ciclo |
+| `ua_public_feed.py` | Feed público de UAs |
+| `fire_pipeline.py` | Agenda e executa pipeline de fogo 05 → 06 → 07 |
+| `fire_risk.py` | Consulta e publicação dos produtos de fogo |
+| `alert_store.py` | Conexão PostgreSQL, migrações 001–003 e persistência de episódios/entregas |
+| `admin_store.py` | Telemetria, produtos, controles, auditoria e importação de legado |
+| `admin_telemetry.py` | Telemetria no banco configurado; arquivos no modo local sem DSN |
+| `admin_analytics.py` | Séries e indicadores administrativos |
+| `notifier.py` | Notificador legado de e-mail/webhook por canal geo/hidro |
+| `admin.py`, `admin_auth.py`, `sigma_auth.py` | Administração e autenticação SIGMA |
+| `actions.py` | Ações orientativas associadas ao nível operacional |
 
-| Modulo | Funcao |
-|--------|--------|
-| `aggregator.py` | Orquestra ciclo: chuva MERGE, previsao WRF, RD por UA; propaga atributos NATIVOS de `uas_area_estudo` em cada ponto |
-| `zones.py` | Carrega `ua_geo.geojson` + `ua_hidro.geojson` (809 UAs) com `ua_id`, `sigla_rodovia`, `regiao_id`, `RAGEO`/`RAHID`, `km_inicial`/`km_final`, `residencia_dr`, `regional`, `uba_*`, `icc_*_thresholds`, `trecho_critico_*` |
-| `ua_public_feed.py` | Feed publico `/api/public/ua-layers` (mesmos atributos nativos + calculados rd/nivel/ac96h_mm/...) |
-| `regions.py` | Carrega 4 regioes monitoradas de `data/regioes/regioes_estudo.geojson` (atributos nativos: `regiao_id`, `regiao_nome`, `sigla_rodovia`, `km_inicial`/`km_final`, `area_km2`, `municipios`, `residencias_dr`, ...) + eixos de `data/regioes/regioes_eixos.geojson`. Snapshot expoe esses atributos para a camada "Regioes monitoradas" no mapa. |
-| `risk.py` | CPC, ICC, matriz RA×ICC → RD |
-| `merge_inpe.py` | Ingestao MERGE/INPE (streaming GRIB2) |
-| `forecast_wrf_prec_hourly.py` | Previsao WRF para composicao PDF |
-| `notifier.py` | Alertas RD≥3 (webhook, etc.) |
-| `admin.py` | Area administrativa `/admin` |
-| `actions.py` | Protocolos e acoes por nivel de RD |
+## Estado institucional
 
-## O que saiu de `core/`
+O banco operacional é separado do cadastro SIGMA. As tabelas novas
+armazenam unidades, competências, abrangências, contatos institucionais
+e configurações. Interlocutores são referências opcionais a pessoas
+do SIGMA; não existem cadastros pessoais ou gestão de agentes internos
+nestas tabelas.
 
-| Antigo | Status | Motivo |
-|--------|--------|--------|
-| `ra_official.py` | Movido para `ferramentas/relatorios-plano-contingencia/` | Tabelas transcritas do PDF; usado por scripts e testes, nao pelo runtime |
-| `ua_der_enrich.py` | Arquivado (`_obsoleto_*.py.bak`) | Atributos DER agora vem nativos da camada `uas_area_estudo` |
-| `der_units.py` | Arquivado (`_obsoleto_*.py.bak`) | Idem: lookup por coordenada substituido por atributos diretos da UA |
-| `ua_segments.py` | Arquivado em `ferramentas/geracao-uas/_obsoleto_*.bak` | Fallback por trecho km, substituido por `zones.py` + 809 UAs |
-| `daee_rain.py` | `ferramentas/integracao-pendente/` | DAEE nao integrado ao pipeline principal |
+A migração 003 está aplicada no banco da VM. O editor genérico de tabelas
+está implementado em `database_admin.py` e documentado em
+[Tabelas do Banco](../docs/TABELAS_DO_BANCO.md), ainda sem publicação.
+Interface institucional integrada, validação SIGMA,
+roteamento por competência e contrato de entrega JSON/API/webhook ainda
+não estão implementados. A chave nova não controla o notificador legado.
+Nenhum envio foi habilitado por essa migração.
 
-## Dados consumidos (em `data/`)
+Ver [gestão institucional](../docs/GESTAO_INSTITUCIONAL.md) e
+[migração 003](../scripts/sql/003_gestao_institucional.md).
 
-- `pli-hazardtrack.gpkg` (camadas `uas_area_estudo`, `regioes_estudo`, `auxilio_regioes_estudo`, `municipios_area_estudo`) — fonte canonica
-- `ua_zones/ua_geo.geojson` + `ua_hidro.geojson` — UAs exportadas de `uas_area_estudo` por `ferramentas/geracao-geopackage/04_export_ua_geojsons.py`
-- `regioes/regioes_estudo.geojson` + `regioes/regioes_eixos.geojson` — Regioes monitoradas exportadas de `regioes_estudo` + `auxilio_regioes_estudo` por `ferramentas/geracao-geopackage/05_export_regioes_geojson.py`
-- `der_sistema_rodoviario/` — malha DER oficial (camada de apoio)
-- `_obsoleto_regioes_pli/` — regioes climatico-geologicas extraidas da Fig 3.2.1-1 (legado, auditoria; substituida pelos buffers de `regioes_estudo`)
+## Dados e histórico
 
-Regenerar camadas:
-```
-python ferramentas/geracao-geopackage/03_uas_area_estudo.py
-python ferramentas/geracao-geopackage/04_export_ua_geojsons.py
-python ferramentas/geracao-geopackage/05_export_regioes_geojson.py
-```
+- Base geográfica: `data/pli-hazardtrack.gpkg`.
+- UAs: `data/ua_zones/ua_geo.geojson` e `ua_hidro.geojson`.
+- Regiões: `data/regioes/regioes_estudo.geojson` e `regioes_eixos.geojson`.
+- MERGE: `data/_cache/merge/`, volume próprio na VM.
+- Fogo: `data/queimadas/` e `static/data/queimadas/`.
+- Histórico/telemetria/produtos/controles: PostgreSQL quando configurado.
+
+Linha do Tempo e consultas históricas utilizam MERGE observado.
+Os registros administrativos não substituem o estado vivo do scheduler.
+Os metadados detalhados dos pluviômetros são administrativos, não campos
+extras no feed público.
+
+Os antigos enriquecedores DER e geradores por polígonos estão arquivados.
+RA e atributos administrativos vêm das UAs. O módulo DAEE legado não é
+usado; isso não significa ausência de pluviômetros, já integrados via SIBH.

@@ -18,6 +18,7 @@ from .admin_analytics import DEFAULT_HOURS, build_analytics
 from .admin_format import format_date_br, format_datetime_br, sanitize_source_path
 from .aggregator import state
 from .merge_ingest import ingest
+from . import admin_store, alert_store
 
 ROOT = Path(__file__).resolve().parent.parent
 _FIRE_PUB = ROOT / "static" / "data" / "queimadas"
@@ -104,7 +105,10 @@ def _by_region(points: List[Dict]) -> Dict[str, Dict[str, int]]:
 def _fire_health() -> Dict[str, Any]:
     from core import fire_pipeline
 
-    stats = _read_json(FIRE_STATS)
+    stats = (
+        (admin_store.product("fire") or {}).get("stats", {})
+        if alert_store.configured() else _read_json(FIRE_STATS)
+    )
     runner = fire_pipeline.get_runner_status()
     latest_inpe = runner.get("inpe_latest_file")
     marker_file = runner.get("observed_file")
@@ -160,8 +164,13 @@ def _fire_health() -> Dict[str, Any]:
 
 
 def _fire_stats() -> Dict[str, Any]:
-    stats = _read_json(FIRE_STATS)
-    snap = _read_json(FIRE_SNAPSHOT)
+    if alert_store.configured():
+        product = admin_store.product("fire") or {}
+        stats = product.get("stats", {})
+        snap = product.get("snapshot", {})
+    else:
+        stats = _read_json(FIRE_STATS)
+        snap = _read_json(FIRE_SNAPSHOT)
     classes = stats.get("classes") or {}
     trechos = snap.get("trechos") or []
     by_regional: Dict[str, Dict[str, int]] = {}
@@ -225,7 +234,10 @@ def _fire_stats() -> Dict[str, Any]:
 
 
 def _geo_stats() -> Dict[str, Any]:
-    snap = state.get_snapshot()
+    snap = (
+        admin_store.snapshot() if alert_store.configured()
+        else state.get_snapshot()
+    )
     summary = snap.get("summary", {})
     points = snap.get("points", []) or []
     geo_pts = [p for p in points if p.get("hazard") == "geo"]
@@ -244,6 +256,7 @@ def _geo_stats() -> Dict[str, Any]:
         "uas_total": len(points),
         "uas_geo": len(geo_pts),
         "uas_hidro": len(hid_pts),
+        "uas_unique": len({p.get("ua_id") for p in points if p.get("ua_id")}),
         "max_rd": summary.get("max_rd", 0),
         "max_rd_name": summary.get("max_rd_name"),
         "by_level": {
@@ -358,6 +371,7 @@ def collect_dashboard(hours: int = DEFAULT_HOURS) -> Dict[str, Any]:
         "health": {
             "geodinamico": geo_h,
             "risco_fogo": fire_h,
+            "database": alert_store.status(),
         },
         "stats": {
             "geodinamico": geo,
@@ -389,6 +403,15 @@ def build_report(
     """Retorna (content_type, filename, body)."""
     data = dashboard or collect_dashboard()
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
+
+    if report_type == "alertas":
+        if not alert_store.configured():
+            raise ValueError("Banco operacional nao configurado")
+        return (
+            "application/json; charset=utf-8", f"pli_alertas_{ts}.json",
+            json.dumps(alert_store.history(limit=200), ensure_ascii=False,
+                       indent=2),
+        )
 
     if report_type == "overview":
         payload = {

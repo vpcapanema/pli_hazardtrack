@@ -1,12 +1,12 @@
-# Deploy legado (VM — desativado)
+# Arquivos de deploy arquivados
 
-Arquivos de deploy em maquina virtual que **nao estao em uso**.
-Mantidos apenas como referencia historica.
+Os arquivos desta pasta são históricos e não devem orientar a implantação
+atual. A antiga desativação de uma VM não descreve o ambiente presente.
 
-| Arquivo | Descricao |
-|---------|-----------|
-| `VM_DEPLOY_DISABLED.md` | Motivo da desativacao e instrucoes antigas |
-| `docker-compose.vm.yml.disabled` | Compose para ambiente VM |
-| `deploy-vm.bat.disabled` | Script batch de deploy Windows |
+A implantação verificada em 12/11/2026 está em Docker na VM AWS, com
+`docker-compose.vm.yml` na raiz e container `pli_hazardtrack_app`.
+O banco operacional é `pli_hazardtrack` em `sigma_pli_db`.
 
-Deploy atual: ver `render.yaml`, `Dockerfile` e `Procfile` na raiz do repo.
+Consultar o [README principal](../../README.md) e os
+[scripts de banco](../../scripts/README.md). Não reativar automaticamente
+arquivos `.disabled` nem remover containers a partir de instruções antigas.

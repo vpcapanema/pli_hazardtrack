@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="csrf-token" content="{{ csrf }}">
+  <title>{{ pages[section] }} · PLI-HazardTrack</title>
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin_workspace.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/leaflet/leaflet.css') }}">
+</head>
+<body class="admin-app workspace-app">
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <a href="{{ url_for('index') }}" class="sidebar-brand">
+      <span class="sidebar-brand-head"><span class="sidebar-brand-name">PLI-HAZARDTRACK</span></span>
+      <span class="sidebar-brand-sub">Riscos climáticos extremos · PLI-SP</span>
+    </a>
+    {% include '_workspace_nav.html' %}
+    <div class="sidebar-foot"><a class="sidebar-link sidebar-link-back" href="{{ url_for('index') }}">Voltar ao mapa</a><p class="sidebar-credit">VPC-WebSistemas e Geoinformação</p></div>
+  </aside>
+  <div class="admin-main">
+    <header class="admin-header">
+      <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menu">☰</button>
+      <div class="header-title"><h1 id="panel-title">{{ pages[section] }}</h1><p id="panel-subtitle">Área restrita estadual</p></div>
+      <div class="header-actions"><span id="updated-at" class="updated-at"></span><button id="btn-refresh" class="btn-secondary">Atualizar</button></div>
+    </header>
+    <div class="adm-session-bar">
+      <div class="adm-session-user"><span class="adm-session-status"></span><strong>{{ session.admin_user.full_name or session.admin_user.username }}</strong><span class="adm-session-role">{{ 'Administrador' if session.admin_user.tipo_usuario == 'ADMIN' else 'Gestor' }}</span></div>
+      <form method="POST" action="{{ url_for('admin.logout') }}"><button class="adm-session-logout">Sair</button></form>
+    </div>
+    <main class="admin-content">
+      {% include '_admin_monitoring_panels.html' %}
+      <section class="panel" id="panel-territorio">
+        <div class="ws-toolbar"><label>Buscar UA, rodovia ou município <input id="territory-search" type="search" placeholder="Digite para filtrar"></label><button id="territory-export" class="btn-secondary">Exportar UAs (GeoJSON)</button><button id="territory-import" class="btn-primary">Incluir UAs oficiais</button></div>
+        <div class="ws-grid"><article class="card"><div class="card-head"><h2>Unidades de análise</h2><span id="territory-count"></span></div><div id="territory-map" aria-label="Mapa das unidades de análise"></div></article><article class="card"><div class="card-head"><h2>Detalhes da unidade</h2></div><div class="card-body" id="territory-detail">Selecione uma UA no mapa ou na lista.</div></article></div>
+        <article class="card"><div class="card-head"><h2>UAs monitoradas</h2></div><div class="card-body" id="territory-list"></div><div class="ws-pagination" id="territory-pagination"></div></article>
+        <article class="card"><div class="card-head"><h2>Exportação das camadas</h2><button id="layers-package" class="btn-secondary">Baixar GeoPackage estrutural</button></div><div class="card-body"><p>Baixe cada camada em GeoJSON ou o conjunto estrutural em GeoPackage, com geometrias e atributos nativos. Os produtos de fogo correspondem à versão disponível no sistema.</p></div><div class="card-body" id="territory-layers"></div></article>
+      </section>
+      <section class="panel" id="panel-alertas">
+        <div class="ws-toolbar"><label>Unidade de análise <input id="alerts-ua" placeholder="Identificador da UA"></label><label>Natureza <select id="alerts-channel"><option value="">Todas</option><option value="geo">Movimentos de massa</option><option value="hidro">Inundação</option></select></label><button id="alerts-search" class="btn-primary">Consultar</button></div>
+        <p class="ws-note">Histórico de episódios geodinâmicos. O risco de fogo observado e previsto está disponível em Monitoramento e Análises. Envios externos desativados.</p>
+        <div class="ws-grid"><article class="card"><div class="card-head"><h2>Episódios</h2></div><div id="alerts-list" class="card-body"></div><div id="alerts-pagination" class="ws-pagination"></div></article><article class="card"><div class="card-head"><h2>Evolução e entregas</h2></div><div id="alerts-detail" class="card-body">Selecione um episódio.</div></article></div>
+      </section>
+      <section class="panel" id="panel-operacao">
+        <div id="operation-kpis" class="kpi-grid"></div>
+        <div class="ws-toolbar"><label>Instituição <select id="institution-select"><option value="">Todas as instituições</option></select></label><button class="btn-primary" data-table="instituicao_operadora">Vincular instituição do SIGMA</button><button id="institution-refresh" class="btn-secondary">Atualizar instituições</button></div>
+        <div id="institution-summary" class="ws-note"></div>
+        <div class="ws-cards" id="operation-cards"></div>
+        <article class="card"><div class="card-head"><h2>Fluxo institucional</h2></div><ol class="ws-steps"><li>Selecione a instituição já cadastrada no SIGMA.</li><li>Cadastre unidades, programas e abrangências.</li><li>Defina competências e contatos operacionais.</li><li>Configure as regras e simule os destinatários.</li></ol></article>
+      </section>
+      <section class="panel" id="panel-integracoes">
+        <p class="ws-note">Preparação institucional do protótipo. A configuração é persistida e auditada; esta área não dispara mensagens externas.</p>
+        <div class="ws-cards" id="integration-cards"></div>
+        <article class="card"><div class="card-head"><h2>Simular encaminhamento</h2></div><div class="card-body">
+          <form id="simulate-form" class="ws-toolbar"><label>UA <input name="ua_id" required list="ua-options"></label><datalist id="ua-options"></datalist><label>Natureza <select name="natureza" id="simulate-nature"><option value="geo">Movimentos de massa</option><option value="hidro">Inundação</option><option value="fire">Fogo</option></select></label><label>Nível <select name="nivel" id="simulate-level"></select></label><label>Fase operacional <select name="fase_id" id="simulate-phase"><option value="">Sem fase específica</option></select></label><button class="btn-primary">Simular sem enviar</button></form>
+          <div id="simulate-result" aria-live="polite"></div>
+        </div></article>
+        <article class="card"><div class="card-head"><h2>Integração por API</h2></div><div class="card-body"><p>Consulte as camadas públicas de risco e o histórico de alertas estruturado. Os sistemas institucionais podem consultar periodicamente os endpoints, mantendo o último cursor recebido.</p><div id="integration-links"></div><p>O arquivo JSON de cada alerta pode ser obtido na página Alertas. Contatos operacionais e dados pessoais não são publicados.</p></div></article>
+      </section>
+      <section class="panel" id="panel-administracao">
+        <div class="ws-cards" id="administration-cards"></div>
+        <article class="card"><div class="card-head"><h2>Acesso ao sistema</h2></div><div class="card-body"><p>Pessoas, instituições e contas são mantidas no SIGMA. Esta área exige perfil Gestor ou Administrador.</p><div id="sigma-links"></div></div></article>
+      </section>
+      <p id="workspace-feedback" role="status" hidden></p>
+    </main>
+  </div>
+  <dialog id="workspace-table-dialog"><header><h2 id="workspace-table-title">Cadastro operacional</h2><button id="workspace-table-close" aria-label="Fechar cadastro">×</button></header><iframe id="workspace-table-frame" title="Cadastro operacional" src="about:blank"></iframe></dialog>
+  <dialog id="territory-import-dialog"><form id="territory-import-form"><header><h2>Incluir UAs oficiais</h2></header><p>Envie GeoJSON em EPSG:4326, com os mesmos atributos da camada nativa exportada. UAs existentes não serão substituídas. RA ausente permanece sem dado.</p><label>Fonte ou documento oficial <input name="fonte" required minlength="15"></label><label>Arquivo GeoJSON <input name="arquivo" type="file" accept=".geojson,.json" required></label><p id="territory-import-result" role="status"></p><footer><button type="button" id="territory-import-cancel">Cancelar</button><button id="territory-validate" type="submit">Validar arquivo</button><button id="territory-confirm" type="button" disabled>Confirmar inclusão</button></footer></form></dialog>
+  <script>window.__BASE_PATH__={{ request.script_root|tojson }};window.__ADMIN_SECTION__={{ section|tojson }};</script>
+  <script src="{{ url_for('static', filename='vendor/leaflet/leaflet.js') }}"></script>
+  <script src="{{ url_for('static', filename='admin_workspace.js') }}"></script>
+  <script src="{{ url_for('static', filename='admin.js') }}"></script>
+</body>
+</html>

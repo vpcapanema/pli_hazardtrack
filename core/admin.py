@@ -32,6 +32,8 @@ from functools import wraps
 from typing import Any, Dict, List, Optional
 
 import requests
+import psycopg
+from psycopg_pool import PoolTimeout
 from flask import (
     Blueprint, current_app, jsonify, redirect, render_template,
     request, session, url_for
@@ -46,12 +48,23 @@ from .merge_inpe import (
 from . import admin_auth
 from .admin_dashboard import build_report, collect_dashboard
 from . import alert_controls
+from . import alert_store
+from . import admin_store
 from .scheduler_registry import get_scheduler
 from .sigma_auth import SigmaConnectionError
+import secrets
+import hmac
 
 log = logging.getLogger("admin")
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+
+@admin_bp.errorhandler(psycopg.Error)
+@admin_bp.errorhandler(PoolTimeout)
+def database_error(exc):
+    log.error("Falha de persistencia administrativa: %s", type(exc).__name__)
+    return jsonify({"error": "banco operacional indisponivel"}), 503
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +78,15 @@ def _login_required(view):
             if request.path.startswith("/admin/api/"):
                 return jsonify({"error": "auth required"}), 401
             return redirect(url_for("admin.login_page", next=request.path))
+        if session["admin_user"].get("tipo_usuario") not in ("GESTOR", "ADMIN"):
+            return jsonify(error="Acesso restrito a gestores e administradores."), 403
+        if request.method == "POST":
+            token = session.get("database_csrf", "")
+            supplied = request.headers.get("X-CSRF-Token", "")
+            if not token or not hmac.compare_digest(
+                token.encode(), supplied.encode(),
+            ):
+                return jsonify(error="Sessão inválida. Recarregue."), 403
         return view(*args, **kwargs)
     return wrapper
 
@@ -384,6 +406,10 @@ def collect_diagnostics() -> Dict[str, Any]:
         "methodology": methodology,
         "web": web,
         "auth_backend": auth_backend,
+        "database": (
+            admin_store.database_details() if alert_store.configured()
+            else alert_store.status()
+        ),
     }
 
 
@@ -403,16 +429,18 @@ def _light_for_data(status: Optional[str], _missing_24h: int) -> str:
 def root():
     """Root do /admin: redireciona para o status (com auth) ou login."""
     if session.get("admin_user"):
-        return redirect(url_for("admin.status_page"))
+        return redirect(url_for("workspace.page"))
     return redirect(url_for("admin.login_page"))
 
 
 @admin_bp.route("/login", methods=["GET"])
 def login_page():
     if session.get("admin_user"):
-        next_url = request.args.get("next", "/admin/status")
+        next_url = request.args.get("next", "/admin/central")
+        if not next_url.startswith("/admin/"):
+            next_url = "/admin/central"
         return redirect(next_url)
-    next_url = request.args.get("next", "/admin/status")
+    next_url = request.args.get("next", "/admin/central")
     return render_template(
         "admin_login.html",
         next_url=next_url,
@@ -439,15 +467,17 @@ def api_auth_login():
     username = str(body.get("username", "")).strip()
     password = str(body.get("password", ""))
     next_url = (
-        str(body.get("next", "/admin/status")).strip()
-        or "/admin/status"
+        str(body.get("next", "/admin/central")).strip()
+        or "/admin/central"
     )
 
-    if not next_url.startswith("/admin"):
-        next_url = "/admin/status"
+    if not next_url.startswith("/admin/"):
+        next_url = "/admin/central"
 
     try:
-        user = admin_auth.authenticate(username, password)
+        user = admin_auth.authenticate(
+            username, password, str(body.get("profile", "GESTOR")),
+        )
     except SigmaConnectionError as exc:
         return jsonify({
             "error": "Servico de autenticacao indisponivel.",
@@ -476,7 +506,9 @@ def logout():
 @admin_bp.route("/status", methods=["GET"])
 @_login_required
 def status_page():
-    return render_template("admin_status.html")
+    session.setdefault("database_csrf", secrets.token_urlsafe(32))
+    return render_template("admin_status.html",
+                           csrf=session["database_csrf"])
 
 
 @admin_bp.route("/api/dashboard", methods=["GET"])
@@ -497,6 +529,33 @@ def api_analytics():
     return jsonify(build_analytics(_state.get_runtime(), hours))
 
 
+@admin_bp.route("/api/alerts", methods=["GET"])
+@_login_required
+def api_alert_history():
+    """Historico original, sem recalcular MERGE nem disparar notificacoes."""
+    if not alert_store.configured():
+        return jsonify({"error": "banco operacional nao configurado"}), 503
+    try:
+        limit = int(request.args.get("limit", "100"))
+        before_raw = request.args.get("before")
+        before = int(before_raw) if before_raw else None
+        channel = request.args.get("channel") or None
+        if not 1 <= limit <= 200 or (before is not None and before <= 0):
+            raise ValueError("paginacao invalida")
+        if channel not in (None, "geo", "hidro"):
+            raise ValueError("canal invalido")
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    try:
+        return jsonify(alert_store.history(
+            limit=limit, before=before,
+            ua_id=request.args.get("ua_id") or None, channel=channel,
+        ))
+    except (psycopg.Error, PoolTimeout):
+        log.exception("falha ao consultar historico de alertas")
+        return jsonify({"error": "banco operacional indisponivel"}), 503
+
+
 @admin_bp.route("/api/reports/export", methods=["GET"])
 @_login_required
 def api_report_export():
@@ -505,6 +564,13 @@ def api_report_export():
         ctype, filename, body = build_report(report_type)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
+    if alert_store.configured():
+        user = session.get("admin_user") or {}
+        admin_store.audit(
+            "exportacao", user.get("username") or "admin",
+            {"type": report_type, "filename": filename,
+             "content_type": ctype, "body": body},
+        )
     from flask import Response
     return Response(
         body,
@@ -555,6 +621,12 @@ def api_refresh_geo():
         }), 409
     if _manual_refresh["geo"]["running"]:
         return jsonify({"status": "busy", "system": "geo"}), 409
+    if alert_store.configured():
+        admin_store.audit(
+            "atualizacao_manual",
+            (session.get("admin_user") or {}).get("username") or "admin",
+            {"system": "geo"},
+        )
 
     def _run():
         _manual_refresh["geo"]["running"] = True
@@ -595,6 +667,12 @@ def api_refresh_fire():
         }), 409
     if _manual_refresh["fire"]["running"]:
         return jsonify({"status": "busy", "system": "fire"}), 409
+    if alert_store.configured():
+        admin_store.audit(
+            "atualizacao_manual",
+            (session.get("admin_user") or {}).get("username") or "admin",
+            {"system": "fire"},
+        )
 
     def _run():
         _manual_refresh["fire"]["running"] = True
@@ -643,7 +721,9 @@ def api_alert_controls_set():
         }), 400
     if "enabled" not in body:
         return jsonify({"error": "campo 'enabled' obrigatorio"}), 400
-    enabled = bool(body.get("enabled"))
+    enabled = body["enabled"]
+    if not isinstance(enabled, bool):
+        return jsonify({"error": "campo 'enabled' deve ser booleano"}), 400
     user = session.get("admin_user") or {}
     actor = user.get("username") or user.get("email") or "admin"
     state_out = alert_controls.set_system(system, enabled, actor=actor)

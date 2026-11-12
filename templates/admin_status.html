@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex,nofollow">
+    <meta name="csrf-token" content="{{ csrf }}">
     <title>PLI-HazardTrack · Administração</title>
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
@@ -20,6 +21,9 @@
             <span class="sidebar-brand-sub">Riscos climáticos extremos · PLI-SP</span>
         </a>
         <nav class="sidebar-nav" aria-label="Seções do painel">
+            <a class="nav-item" href="{{ url_for('database_admin.tables_page') }}">
+                Administração · Tabelas do Banco
+            </a>
             <button type="button" class="nav-item active" data-panel="visao">
                 Visão geral
             </button>

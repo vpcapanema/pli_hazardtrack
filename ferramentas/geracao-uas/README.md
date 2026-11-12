@@ -5,8 +5,10 @@ PDF do Produto 7 (extracao por cor das figuras 3.3.3-x + buffering 500 m
 no eixo da malha rodoviaria DER).
 
 Esse pipeline foi DESCONTINUADO. A camada operacional `uas_area_estudo`
-agora e gerada **diretamente do GeoPackage** com base nos km cadastrais
-oficiais e nas tabelas do Produto 7 (sem amostragem por imagem).
+agora e persistida no **GeoPackage**, com base nos km cadastrais e nas
+tabelas do Produto 7. A reconstrucao usa as figuras para distribuir RA
+espacialmente e confere os totais oficiais. O backend le RA ja persistido;
+nao existe etapa adicional de atribuicao por imagem em runtime.
 
 ## Pipeline atual
 

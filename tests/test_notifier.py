@@ -8,6 +8,7 @@ import os
 import sys
 import unittest
 from datetime import datetime, timezone, timedelta
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -47,6 +48,12 @@ class TestNotifierDisabled(unittest.TestCase):
 
 class TestNotifierSelecao(unittest.TestCase):
     def setUp(self):
+        backend = patch("core.alert_store.configured", return_value=False)
+        backend.start()
+        self.addCleanup(backend.stop)
+        required = patch("core.alert_store.required", return_value=False)
+        required.start()
+        self.addCleanup(required.stop)
         self.n = _make_enabled()
         self.t0 = datetime(2026, 6, 4, 12, 0, tzinfo=timezone.utc)
 
@@ -99,6 +106,61 @@ class TestNotifierSelecao(unittest.TestCase):
         for k in ("enabled_email", "enabled_webhook", "threshold",
                   "cooldown_h", "sent_total"):
             self.assertIn(k, st)
+
+    def test_native_ua_ids_are_independent(self):
+        points = [
+            {"ua_id": "UA-1", "rd": 3, "source": "MERGE/INPE"},
+            {"ua_id": "UA-2", "rd": 3, "source": "MERGE/INPE"},
+        ]
+        self.assertEqual(self.n.evaluate(points, {}, self.t0, "geo"), 2)
+        self.assertEqual(
+            self.n.evaluate(points, {}, self.t0 + timedelta(hours=1), "geo"),
+            0,
+        )
+
+    def test_failed_delivery_does_not_start_cooldown(self):
+        self.n._send_webhook = lambda *a, **k: False
+        self.assertEqual(
+            self.n.evaluate([_zone("Z1", 3)], {}, self.t0), 0,
+        )
+        self.n._send_webhook = lambda *a, **k: True
+        self.assertEqual(
+            self.n.evaluate(
+                [_zone("Z1", 3)], {}, self.t0 + timedelta(minutes=10),
+            ), 1,
+        )
+
+    def test_no_data_preserves_cooldown(self):
+        self.n.evaluate([_zone("Z1", 3)], {}, self.t0, "geo")
+        self.n.evaluate(
+            [_zone("Z1", 0, "NO_DATA")], {},
+            self.t0 + timedelta(minutes=10), "geo",
+        )
+        self.assertEqual(
+            self.n.evaluate(
+                [_zone("Z1", 3)], {}, self.t0 + timedelta(minutes=20), "geo",
+            ), 0,
+        )
+
+    def test_native_attributes_in_message(self):
+        point = {
+            "ua_id": "UA-1", "sigla_rodovia": "SP-055",
+            "km_inicial": 123.4, "RAGEO": 4, "regiao_nome": "R3",
+            "rd": 3,
+        }
+        _, body = self.n._format([point], {}, self.t0, "geo")
+        for value in ("UA-1", "SP-055", "123.4", "RA4", "R3"):
+            self.assertIn(value, body)
+
+    def test_database_failure_prevents_unrecorded_send(self):
+        with patch("core.alert_store.configured", return_value=True), \
+                patch("core.alert_store.observe", side_effect=RuntimeError), \
+                patch.object(self.n, "_send_webhook") as send:
+            self.assertEqual(
+                self.n.evaluate([_zone("Z1", 3)], {}, self.t0, "geo"), 0,
+            )
+            send.assert_not_called()
+            self.assertEqual(self.n.last_error, "RuntimeError")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,77 @@
+[
+  {
+    "id": "semil-sp-sem-fogo",
+    "titulo": "SEMIL - SP Sem Fogo",
+    "url": "https://semil.sp.gov.br/sma/sp-sem-fogo/"
+  },
+  {
+    "id": "defesa-civil-legislacao",
+    "titulo": "Defesa Civil - Legislacao",
+    "url": "https://www.defesacivil.sp.gov.br/sec_defesa_civil/institucional/legislacao"
+  },
+  {
+    "id": "defesa-civil-resolucoes-2026",
+    "titulo": "Defesa Civil - Resolucoes executivas 2026",
+    "url": "https://www.defesacivil.sp.gov.br/sec_defesa_civil/res_resolucoes_executivas"
+  },
+  {
+    "id": "defesa-civil-regionais",
+    "titulo": "Defesa Civil - Coordenadores regionais",
+    "url": "https://www.defesacivil.sp.gov.br/sec_defesa_civil/coordenadores-regionais-de-defesa-civil"
+  },
+  {
+    "id": "defesa-civil-competencias",
+    "titulo": "Defesa Civil - Funcoes e competencias",
+    "url": "https://www.defesacivil.sp.gov.br/sec_defesa_civil/institucional/funcoesCompetencias"
+  },
+  {
+    "id": "der-coi",
+    "titulo": "DER - Central de Operacoes",
+    "url": "https://dersp.der.sp.gov.br/WebSite/Servicos/Informacoes/COI.aspx"
+  },
+  {
+    "id": "der-plano-contingencia-2017",
+    "titulo": "DER - Plano de Contingencia 2017 (historico)",
+    "url": "https://www.der.sp.gov.br/WebSite/Arquivos/BancoMundial/Plano_Contingencia/PlanoContingncia.pdf"
+  },
+  {
+    "id": "der-plano-seguranca-viaria",
+    "titulo": "DER - Plano de Seguranca Viaria",
+    "url": "https://www.der.sp.gov.br/WebSite/Arquivos/DadosAbertos/Acidentes/PlanoSeguranca/Plano%20de%20Seguran%C3%A7a%20Vi%C3%A1ria.pdf"
+  },
+  {
+    "id": "bombeiros-lc-1257-2015",
+    "titulo": "ALESP - Competencias Bombeiros LC 1257",
+    "url": "https://www.al.sp.gov.br/repositorio/legislacao/lei.complementar/2015/lei.complementar-1257-06.01.2015.html"
+  },
+  {
+    "id": "ff-unidades-2025",
+    "titulo": "Fundacao Florestal - Lista de unidades 2025",
+    "url": "https://smastr16.blob.core.windows.net/fundacaoflorestal/2025/04/ANEXO-03-Lista-de-Enderecos-das-Unidades.pdf"
+  },
+  {
+    "id": "ff-nucleo-sao-sebastiao",
+    "titulo": "FF - Nucleo Sao Sebastiao",
+    "url": "https://guiadeareasprotegidas.sp.gov.br/ap/parque-estadual-serra-do-mar-nucleo-sao-sebastiao/"
+  },
+  {
+    "id": "cnl-governo-2026",
+    "titulo": "Governo SP - Operacao Novo Litoral 03-11-2026",
+    "url": "https://www.casacivil.sp.gov.br/sec_casa_civil/noticias/litoralpaulista"
+  },
+  {
+    "id": "cnl-projeto",
+    "titulo": "SPI - Lote Litoral Paulista",
+    "url": "https://www.parceriaseminvestimentos.sp.gov.br/sec-parcerias-investimentos/projetos/projetos-contratados/lote-litoral-paulista"
+  },
+  {
+    "id": "semil-adesoes-2026",
+    "titulo": "SEMIL - Adesoes municipais 2026",
+    "url": "https://semil.sp.gov.br/dados-abertos-adm/2026/04/adesoes-municipios-sp-sem-fogo/"
+  },
+  {
+    "id": "bombeiros-caraguatatuba-2025",
+    "titulo": "Prefeitura - Unidade Bombeiros Caraguatatuba 2025",
+    "url": "https://www.caraguatatuba.sp.gov.br/pmc/2025/09/inscricoes-para-24-vagas-de-guarda-vidas-temporarios-em-caraguatatuba-terminam-na-proxima-semana/"
+  }
+]

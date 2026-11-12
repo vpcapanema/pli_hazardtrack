@@ -37,6 +37,7 @@ from .gauge_correction import correct_rain_batch
 from .gauge_primary import SOURCE_LABEL, apply_gauge_primary
 from .notifier import notifier
 from . import admin_telemetry
+from . import alert_store
 
 log = logging.getLogger("aggregator")
 
@@ -433,7 +434,34 @@ class State:
             try:
                 admin_telemetry.record(self._telemetry_entry(entry, summary))
             except Exception as e:  # noqa: BLE001
-                log.debug("telemetria do ciclo nao gravada: %s", e)
+                log.exception("telemetria do ciclo nao gravada: %s", e)
+            if alert_store.configured():
+                try:
+                    alert_store.record_cycle(now, entry)
+                    if published:
+                        from . import admin_store
+                        from .admin_analytics import (
+                            _hourly_by_region, _regional,
+                        )
+                        snapshot = self.get_snapshot()
+                        hourly = _hourly_by_region(
+                            _regional(snapshot),
+                            cache=self.get_rain_series(), live=True,
+                        )
+                        if summary.get("data_status") == "no_data":
+                            hourly = {
+                                "available": False,
+                                "reason": "ciclo sem dados meteorologicos",
+                            }
+                        admin_store.record_geo(snapshot, hourly)
+                except Exception:
+                    log.exception("falha ao persistir ciclo/produto operacional")
+            if published:
+                for channel in ("geo", "hidro"):
+                    notifier.evaluate(
+                        self.snapshot.get(f"points_{channel}", []),
+                        summary, now, channel=channel,
+                    )
 
     def _telemetry_entry(
         self, base: Dict[str, Any], summary: Dict[str, Any],
@@ -711,13 +739,6 @@ class State:
             forecast_ok, forecast_count, len(self.points_geo)
         )
 
-        # Notificacao de alertas por canal (falha NUNCA interrompe ciclo)
-        try:
-            summary = self.snapshot.get("summary", {})
-            notifier.evaluate(new_geo, summary, now, channel="geo")
-            notifier.evaluate(new_hidro, summary, now, channel="hidro")
-        except Exception as e:  # noqa: BLE001
-            log.error("notificacao falhou (ignorado): %s", e)
         return True
 
     def _publish_no_data(self, now):

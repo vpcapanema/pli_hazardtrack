@@ -33,13 +33,15 @@ def auth_configured() -> bool:
     return bool(_env("ADMIN_USER") and _env("ADMIN_PASS"))
 
 
-def authenticate(username: str, password: str) -> AdminUser | None:
+def authenticate(
+    username: str, password: str, profile: str = GESTOR_PROFILE,
+) -> AdminUser | None:
     identifier = (username or "").strip()
-    if not identifier or not password:
+    if not identifier or not password or profile not in ("GESTOR", "ADMIN"):
         return None
 
     if sigma_auth.sigma_configured():
-        user = sigma_auth.authenticate_gestor(identifier, password)
+        user = sigma_auth.authenticate_gestor(identifier, password, profile)
         if user:
             return AdminUser(
                 user_id=user.id,

@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from shapely.geometry import shape
+from .managed_geodata import zone_paths
 
 log = logging.getLogger("zones")
 
@@ -46,7 +47,8 @@ def _file_mtime(path: Path) -> float:
 
 def zones_disk_token() -> Tuple[float, float]:
     """(mtime geo, mtime hidro) - detector de alteracao no disco."""
-    return (_file_mtime(_GEOJSON_GEO), _file_mtime(_GEOJSON_HIDRO))
+    geo, hidro = zone_paths()
+    return (_file_mtime(geo), _file_mtime(hidro))
 
 
 def _to_int(v: Any) -> Optional[int]:
@@ -202,8 +204,9 @@ def reload_zones_if_changed(force: bool = False) -> bool:
     token = zones_disk_token()
     if not force and token == _cache["token"]:
         return False
-    _cache["geo"] = _load_hazard_zones(_GEOJSON_GEO, "geo")
-    _cache["hidro"] = _load_hazard_zones(_GEOJSON_HIDRO, "hidro")
+    geo, hidro = zone_paths()
+    _cache["geo"] = _load_hazard_zones(geo, "geo")
+    _cache["hidro"] = _load_hazard_zones(hidro, "hidro")
     _cache["token"] = token
     log.info(
         "Malha UA recarregada do disco (geo=%d hidro=%d)",

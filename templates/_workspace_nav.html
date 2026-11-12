@@ -1,0 +1,12 @@
+<nav class="sidebar-nav workspace-nav" aria-label="Área restrita">
+  {% for key, label in [('visao','Visão geral'),('saude','Monitoramento'),('territorio','Território e camadas'),('alertas','Alertas'),('operacao','Gestão operacional'),('integracoes','Comunicação e integrações'),('analytics','Análises'),('estatisticas','Estatísticas'),('relatorios','Relatórios')] %}
+  <a class="nav-item" data-panel="{{ key }}" href="{{ url_for('workspace.page', section=key) }}">{{ label }}</a>
+  {% endfor %}
+  <details open class="workspace-nav-group">
+    <summary>Administração</summary>
+    <a class="nav-item" data-panel="administracao" href="{{ url_for('workspace.page', section='administracao') }}">Domínios, acesso e auditoria</a>
+    <a class="nav-item" data-panel="controles" href="{{ url_for('workspace.page', section='controles') }}">Controles de monitoramento</a>
+    <a class="nav-item" data-panel="sistema" href="{{ url_for('workspace.page', section='sistema') }}">Diagnóstico técnico</a>
+    <a class="nav-item" href="{{ url_for('database_admin.tables_page') }}">Tabelas do Banco</a>
+  </details>
+</nav>

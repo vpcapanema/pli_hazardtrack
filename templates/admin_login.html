@@ -42,6 +42,8 @@
 
                 <form id="login-form" novalidate>
                     <input type="hidden" id="login-next" value="{{ next_url }}">
+                    <label class="access-field-label" for="login-profile">Perfil de acesso</label>
+                    <select id="login-profile" class="access-profile"><option value="GESTOR">Gestor</option><option value="ADMIN">Administrador</option></select>
 
                     <div class="access-field">
                         <label class="access-field-label" for="login-user" id="login-user-label">Usuário</label>

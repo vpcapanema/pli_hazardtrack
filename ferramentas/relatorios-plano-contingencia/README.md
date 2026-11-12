@@ -15,12 +15,12 @@ e metodologia do sistema HazardTrack. **Nao e carregado pelo backend.**
 
 ## Onde foi usado no projeto
 
-- **Tabela 2-1** → cortes municipais em `geracao-uas/build_ua_polygons.py`
+- **Tabela 2-1** → cortes municipais em `geracao-geopackage/03_uas_area_estudo.py`
 - **Tabela 3.3-1** → contagem 809 UAs por regiao/municipio/escala
-- **Tabelas 3.3.1-2 / 3.3.2-2** → orcamento RA em `geracao-uas/ua_ra_budgets.py`
-- **Tabelas 3.3.3.1-3 / 3.3.3.1-4** → trechos criticos em `core/ra_official.py`
+- **Tabelas 3.3.1-2 / 3.3.2-2** → orcamento RA em `extracao-ra/40_oficial_tabelas.py`
+- **Tabelas 3.3.3.1-3 / 3.3.3.1-4** → trechos criticos em `ferramentas/relatorios-plano-contingencia/ra_official.py`
 - **Figuras 3.3-2..5** → escala cartografica por UA
-- **Figuras 3.3.3-x** → leitura de cor RA em `assign_ra_to_uas.py`
+- **Figuras 3.3.3-x** → leitura de cor RA em `geracao-geopackage/03_uas_area_estudo.py`
 - **`ra_official.py`** → Tabelas 3.3.3.1-3/-4 transcritas (trechos criticos);
   usado por scripts de geracao/validacao e por `tests/test_scenarios.py`
 

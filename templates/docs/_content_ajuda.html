@@ -109,9 +109,10 @@
 
           <h3>3. Chuva e gatilho meteorológico</h3>
           <p>
-            Fonte operacional: <b>MERGE/CPTEC/INPE</b> (grade horária,
-            calibrada para o Brasil). O sistema mantém uma janela móvel das
-            <b>últimas 96 h</b> em memória, alimentada por uma thread de
+            Fonte primária: <b>pluviômetros SIBH/SP Águas</b>, quando há cobertura
+            suficiente. Na ausência de cobertura, utiliza <b>MERGE/CPTEC/INPE</b>,
+            com correção por estações quando possível. O cache MERGE mantém uma janela das
+            <b>últimas 96 h</b> em memória e disco, alimentada por uma thread de
             ingest contínua (ciclo de 120 s). Em modo ao vivo, o RD incorpora
             também previsão <b>WRF horária do CPTEC</b> nas janelas do
             Produto 6:
@@ -120,7 +121,7 @@
             <tr>
               <th>Canal geo (risco geológico)</th>
               <td>
-                Acumulado <b>96 h</b> = 72 h observadas (MERGE) + 24 h
+                Acumulado <b>96 h</b> = 72 h observadas + 24 h
                 previstas (WRF), quando disponível.
               </td>
             </tr>

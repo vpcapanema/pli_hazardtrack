@@ -1,0 +1,265 @@
+            <!-- VISÃO GERAL -->
+            <section class="panel active" id="panel-visao" data-title="Visão geral"
+                     data-subtitle="Panorama dos dois módulos de monitoramento">
+                <div class="kpi-grid" id="kpi-overview"></div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Movimentos de massa e inundação</h2>
+                            <button type="button" class="btn-refresh-now"
+                                    id="btn-refresh-geo"
+                                    data-system="geo"
+                                    title="Puxar dados MERGE/INPE do momento e recalcular o RD">
+                                <span class="brn-ico" aria-hidden="true">↻</span>
+                                <span class="brn-lbl">Atualizar agora</span>
+                            </button>
+                        </div>
+                        <div id="refresh-geo-msg" class="refresh-msg" hidden></div>
+                        <div id="visao-geo" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Risco de fogo (INPE)</h2>
+                            <button type="button" class="btn-refresh-now"
+                                    id="btn-refresh-fire"
+                                    data-system="fire"
+                                    title="Puxar o arquivo mais atual da INPE e recalcular o risco de fogo">
+                                <span class="brn-ico" aria-hidden="true">↻</span>
+                                <span class="brn-lbl">Atualizar agora</span>
+                            </button>
+                        </div>
+                        <div id="refresh-fire-msg" class="refresh-msg" hidden></div>
+                        <div id="visao-fire" class="card-body"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- CONTROLES DE ALERTA -->
+            <section class="panel" id="panel-controles" data-title="Controles de alerta"
+                     data-subtitle="Ligar ou desligar cada sistema de monitoramento (default: ligado)">
+                <div class="two-col">
+                    <article class="card" id="control-geo-card">
+                        <div class="card-head"><h2>Geodinâmico — MERGE / RD</h2></div>
+                        <div id="control-geo" class="card-body"></div>
+                    </article>
+                    <article class="card" id="control-fire-card">
+                        <div class="card-head"><h2>Risco de fogo — INPE RF</h2></div>
+                        <div id="control-fire" class="card-body"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- SAÚDE -->
+            <section class="panel" id="panel-saude" data-title="Saúde dos sistemas"
+                     data-subtitle="Semáforos, pipelines e fontes de dados">
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head"><h2>Geodinâmico (MERGE / RD)</h2></div>
+                        <div id="health-geo" class="card-body"></div>
+                        <div class="exec-control" id="exec-geo"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head"><h2>Risco de fogo (INPE RF)</h2></div>
+                        <div id="health-fire" class="card-body"></div>
+                        <div class="exec-control" id="exec-fire"></div>
+                    </article>
+                </div>
+                <article class="card card-full">
+                    <div class="card-head">
+                        <h2>Últimos ciclos (geodinâmico)</h2>
+                        <span class="card-note" id="cycle-history-note"></span>
+                    </div>
+                    <div class="history-wrap">
+                        <table class="history-table" id="cycle-history">
+                            <thead>
+                                <tr>
+                                    <th>Início</th>
+                                    <th>Duração</th>
+                                    <th>Resultado</th>
+                                    <th>Dados</th>
+                                    <th class="num">RD máx</th>
+                                    <th class="num">Alerta 3+4</th>
+                                    <th class="num">Chuva 24h máx</th>
+                                    <th class="num">Horas OK</th>
+                                    <th>Erro</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </article>
+            </section>
+
+            <!-- ESTATÍSTICAS -->
+            <section class="panel" id="panel-estatisticas" data-title="Estatísticas"
+                     data-subtitle="Distribuição atual dos níveis monitorados">
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Quantas UAs estão em cada nível de risco (encosta e inundação)</h2>
+                            <span class="card-note" id="stats-rd-note"></span>
+                        </div>
+                        <div id="stats-rd-bars" class="card-body chart-box"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Quantos trechos de rodovia estão em cada classe de risco de fogo</h2>
+                            <span class="card-note" id="stats-rf-note"></span>
+                        </div>
+                        <div id="stats-rf-bars" class="card-body chart-box"></div>
+                    </article>
+                </div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head"><h2>Nível de risco das UAs em cada região monitorada</h2></div>
+                        <div id="stats-region-geo" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head"><h2>Risco de fogo por regional do DER</h2></div>
+                        <div id="stats-region-fire" class="card-body"></div>
+                    </article>
+                </div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head"><h2>Quanto choveu em cada região (janelas que alimentam o RD)</h2></div>
+                        <div id="stats-region-rain" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head"><h2>Trechos de rodovia com maior risco de fogo agora</h2></div>
+                        <div id="stats-top-fire" class="card-body"></div>
+                    </article>
+                </div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head"><h2>UAs com maior risco de movimento de massa (encosta)</h2></div>
+                        <div id="stats-top-geo" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head"><h2>UAs com maior risco de inundação</h2></div>
+                        <div id="stats-top-hidro" class="card-body"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ANALYTICS -->
+            <section class="panel" id="panel-analytics" data-title="Analytics"
+                     data-subtitle="Evolução do risco, chuva e qualidade do dado">
+                <div class="panel-toolbar">
+                    <span class="toolbar-label" id="analytics-window-label">Janela de análise</span>
+                    <div class="range-seg" id="analytics-range" role="group" aria-label="Janela de análise">
+                        <button type="button" data-hours="6">6 h</button>
+                        <button type="button" data-hours="24" class="active">24 h</button>
+                        <button type="button" data-hours="72">72 h</button>
+                        <button type="button" data-hours="168">7 d</button>
+                    </div>
+                </div>
+                <div class="kpi-grid" id="kpi-analytics"></div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Como o número de UAs em cada nível evoluiu no tempo</h2>
+                            <span class="card-note" id="chart-levels-note"></span>
+                        </div>
+                        <div id="chart-levels" class="card-body chart-box"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Chuva hora a hora nas últimas 96 h, por região</h2>
+                            <span class="card-note" id="chart-hourly-note"></span>
+                        </div>
+                        <div id="chart-hourly" class="card-body chart-box"></div>
+                    </article>
+                </div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Quão perto cada região está do próximo nível de alerta (chuva 24 h)</h2>
+                            <span class="card-note">máximo entre as UAs da região · PRODUTO 6</span>
+                        </div>
+                        <div id="chart-thresholds" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Quais UAs subiram ou desceram de nível de risco</h2>
+                            <span class="card-note" id="escalation-note"></span>
+                        </div>
+                        <div id="escalation" class="card-body"></div>
+                    </article>
+                </div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Quantas UAs receberam cada faixa de chuva</h2>
+                            <span class="card-note" id="dist-note"></span>
+                        </div>
+                        <div id="chart-dist" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Risco de fogo hoje e previsto para os próximos 3 dias</h2>
+                            <span class="card-note" id="fire-horizon-note"></span>
+                        </div>
+                        <div id="chart-fire-horizons" class="card-body"></div>
+                    </article>
+                </div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Qualidade da chuva por satélite (horas válidas e correção por solo)</h2>
+                            <span class="card-note">horas válidas na janela de 96 h · fator de correção por solo</span>
+                        </div>
+                        <div id="chart-quality" class="card-body chart-box"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head">
+                            <h2>Saúde da execução dos ciclos de cálculo</h2>
+                            <span class="card-note" id="ops-note"></span>
+                        </div>
+                        <div id="chart-ops" class="card-body"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- RELATÓRIOS -->
+            <section class="panel" id="panel-relatorios" data-title="Relatórios"
+                     data-subtitle="Exportação inteligente para operação e auditoria">
+                <div class="report-grid" id="report-cards"></div>
+                <article class="card card-full">
+                    <div class="card-head">
+                        <h2>Pré-visualização rápida</h2>
+                        <span class="card-note">resumo do estado atual do monitoramento</span>
+                    </div>
+                    <div id="report-preview" class="card-body"></div>
+                </article>
+            </section>
+
+            <!-- SISTEMA TÉCNICO -->
+            <section class="panel" id="panel-sistema" data-title="Sistema técnico"
+                     data-subtitle="Runtime, dependências e diagnóstico completo">
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head"><h2>Runtime</h2></div>
+                        <div id="system-runtime" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head"><h2>Pipeline geodinâmico</h2></div>
+                        <div id="system-pipeline" class="card-body"></div>
+                    </article>
+                </div>
+                <div class="two-col">
+                    <article class="card">
+                        <div class="card-head"><h2>Fontes externas</h2></div>
+                        <div id="system-sources" class="card-body"></div>
+                    </article>
+                    <article class="card">
+                        <div class="card-head"><h2>Autenticação e metodologia</h2></div>
+                        <div id="system-auth" class="card-body"></div>
+                    </article>
+                </div>
+                <article class="card card-full">
+                    <details>
+                        <summary>JSON completo (suporte / auditoria)</summary>
+                        <pre id="raw-diagnostics"></pre>
+                    </details>
+                </article>
+            </section>

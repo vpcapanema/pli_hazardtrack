@@ -1,6 +1,11 @@
 .git
 .gitignore
 .gitattributes
+.env
+.env.*
+*.pem
+*.ppk
+.deploy
 .venv
 venv
 env

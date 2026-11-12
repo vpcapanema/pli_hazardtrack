@@ -39,3 +39,6 @@ Dockerfile text eol=lf
 *.grib   binary
 *.grib2  binary
 *.nc     binary
+
+# Preserve downloaded references byte-for-byte (manifest SHA-256).
+ferramentas/referencias-operacao/coleta-*/** binary

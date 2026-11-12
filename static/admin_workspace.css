@@ -1,0 +1,49 @@
+/* Identidade HazardTrack: tokens, fontes e componentes de admin.css. */
+.workspace-nav { overflow-y:auto; min-height:0; }
+.workspace-nav .nav-item { display:block; text-decoration:none; }
+.workspace-nav-group summary { color:var(--pli-verde); font-size:.85rem; font-weight:600; padding:12px; cursor:pointer; }
+.workspace-nav-group .nav-item { padding-left:22px; }
+.ws-toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:end; margin-bottom:16px; }
+.workspace-app .admin-content .btn-secondary { background:var(--card); color:var(--pli-navy); border:1px solid var(--line-2); }
+.workspace-app .admin-content .btn-secondary:hover { background:var(--bg); }
+.workspace-app .sidebar-brand-head { font-size:16px; }
+.ws-toolbar label { display:flex; flex-direction:column; gap:5px; font-size:.8rem; color:var(--ink-2); }
+.workspace-app input, .workspace-app select { font:inherit; font-size:.85rem; padding:8px 10px; border:1px solid var(--line-2); border-radius:7px; background:var(--card); color:var(--ink); }
+.ws-grid { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:16px; margin-bottom:16px; }
+#territory-map { height:420px; z-index:0; border-radius:0 0 10px 10px; }
+.ws-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:16px; }
+.ws-module-card { padding:20px; display:flex; flex-direction:column; align-items:start; }
+.ws-module-card h2 { font-family:'Poppins','Inter',sans-serif; font-size:1rem; color:var(--pli-navy); margin:0; }
+.ws-module-card p { font-size:.85rem; color:var(--muted); flex:1; }
+.ws-kpi { padding:16px; }
+.ws-kpi span { display:block; font-size:.78rem; color:var(--muted); }
+.ws-kpi strong { font-size:1.7rem; color:var(--pli-verde-escuro); }
+.ws-note { padding:12px 16px; background:var(--bg); border-left:3px solid var(--pli-accent); color:var(--ink-2); font-size:.85rem; }
+.ws-steps { font-size:.9rem; line-height:2; padding:12px 36px; }
+.ws-table-wrap { overflow:auto; max-width:100%; }
+.ws-table { width:100%; border-collapse:collapse; font-size:.8rem; }
+.ws-table th { color:white; background:var(--pli-navy); text-align:left; padding:9px; }
+.ws-table td { padding:8px 9px; border-bottom:1px solid var(--line); }
+.ws-table tr:nth-child(even) { background:var(--bg); }
+.ws-link { border:0; background:transparent; color:var(--pli-accent); cursor:pointer; font:inherit; text-decoration:underline; padding:0; }
+.ws-pagination { display:flex; align-items:center; justify-content:center; gap:12px; padding:16px; font-size:.8rem; }
+.ws-timeline { border-left:3px solid var(--pli-verde); padding-left:22px; margin-left:8px; line-height:1.7; font-size:.85rem; }
+.ws-timeline li { padding:8px 0; }
+.ws-simulation { padding:12px; border-bottom:1px solid var(--line); }
+#workspace-feedback { position:sticky; bottom:16px; z-index:20; background:var(--pli-navy); color:white; padding:14px 18px; border-radius:8px; box-shadow:var(--shadow); }
+#integration-links p { display:flex; flex-direction:column; gap:6px; }
+#integration-links code { overflow-wrap:anywhere; }
+.workspace-app dialog { border:1px solid var(--line); border-radius:12px; padding:0; color:var(--ink); background:var(--card); box-shadow:var(--shadow); }
+.workspace-app dialog::backdrop { background:rgba(15,23,42,.5); }
+.workspace-app dialog header { display:flex; align-items:center; justify-content:space-between; padding:14px 20px; border-bottom:1px solid var(--line); }
+.workspace-app dialog h2 { font-size:1rem; margin:0; color:var(--pli-navy); }
+.workspace-app dialog button { font:inherit; font-size:.85rem; border:1px solid var(--line-2); border-radius:7px; padding:8px 12px; cursor:pointer; background:var(--card); }
+.workspace-app dialog button:disabled { opacity:.45; cursor:not-allowed; }
+#workspace-table-dialog { width:min(1400px,96vw); height:90vh; max-width:96vw; max-height:94vh; }
+#workspace-table-frame { display:block; width:100%; height:calc(100% - 66px); border:0; }
+#territory-import-dialog { width:min(680px,94vw); }
+#territory-import-dialog p, #territory-import-dialog label { display:block; margin:16px 20px; font-size:.85rem; }
+#territory-import-dialog input { display:block; margin-top:6px; width:100%; }
+#territory-import-dialog footer { display:flex; justify-content:end; gap:8px; padding:16px; border-top:1px solid var(--line); }
+@media(max-width:1100px){.ws-cards{grid-template-columns:repeat(2,minmax(0,1fr));}.ws-grid{grid-template-columns:1fr;}}
+@media(max-width:650px){.ws-cards{grid-template-columns:1fr;}.ws-toolbar>*{width:100%;}.ws-toolbar input{width:100%;}.ws-pagination{gap:6px;}#territory-map{height:300px;}}

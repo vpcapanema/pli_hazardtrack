@@ -23,6 +23,9 @@ def _ts(minutes_ago: float) -> str:
 
 class TestTelemetry(unittest.TestCase):
     def setUp(self):
+        backend = mock.patch("core.alert_store.configured", return_value=False)
+        backend.start()
+        self.addCleanup(backend.stop)
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         tel.reset_for_tests(Path(self.tmp.name))
@@ -69,6 +72,11 @@ class TestTelemetry(unittest.TestCase):
 
 
 class TestAnalyticsHelpers(unittest.TestCase):
+    def setUp(self):
+        backend = mock.patch("core.alert_store.configured", return_value=False)
+        backend.start()
+        self.addCleanup(backend.stop)
+
     def test_bins(self):
         bins = aa._bin_counts([0, 4.9, 5, 30, 500], [0, 5, 15, 30])
         self.assertEqual([b["count"] for b in bins], [2, 1, 0, 2])
@@ -168,6 +176,11 @@ class TestAnalyticsHelpers(unittest.TestCase):
 
 
 class TestBuildAnalytics(unittest.TestCase):
+    def setUp(self):
+        backend = mock.patch("core.alert_store.configured", return_value=False)
+        backend.start()
+        self.addCleanup(backend.stop)
+
     def test_payload_completo_sem_dados(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)

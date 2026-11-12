@@ -63,6 +63,7 @@
         body: JSON.stringify({
           username: username,
           password: password,
+          profile: $('#login-profile')?.value || 'GESTOR',
           next: nextUrl,
         }),
       });

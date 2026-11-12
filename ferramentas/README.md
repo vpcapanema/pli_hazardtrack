@@ -1,8 +1,8 @@
 # Ferramentas auxiliares
 
 Scripts, relatorios e artefatos de apoio **fora do backend operacional**
-(`app.py`, `core/`, `static/`, `templates/`). Nenhum destes arquivos e
-carregado em tempo de execucao da aplicacao.
+(`app.py`, `core/`, `static/`, `templates/`). Excecao: `core/fire_pipeline.py` executa os scripts 05, 06 e 07 de
+`queimadas/` em subprocessos durante a atualizacao automatica.
 
 Os **dados gerados** que o sistema consome permanecem em `data/`
 (`data/pli-hazardtrack.gpkg`, `data/ua_zones/ua_geo.geojson`,
@@ -16,9 +16,12 @@ Os **dados gerados** que o sistema consome permanecem em `data/`
 | [preparacao-geodata/](preparacao-geodata/) | Scripts one-shot para malha DER, regioes, camadas admin |
 | [queimadas/](queimadas/) | Pipeline isolado para risco estadual de queimadas por trecho DER-SP |
 | [exploracao-georef/](exploracao-georef/) | POCs de georreferenciamento, probes, testes MERGE |
-| [integracao-pendente/](integracao-pendente/) | Modulos prontos fora do pipeline (ex.: DAEE) |
-| [deploy-legado/](deploy-legado/) | Deploy VM desativado (historico) |
+| [integracao-pendente/](integracao-pendente/) | DAEE legado; SIBH ja integrado em core/ |
+| [deploy-legado/](deploy-legado/) | Scripts antigos (historico); VM atual ativa |
 | [geracao-uas/](geracao-uas/) | **ARQUIVADO** - pipeline antigo de poligonos. Scripts mantidos como `_obsoleto_*.py.bak` apenas para referencia |
+
+Referencias institucionais: [referencias-operacao/](referencias-operacao/README.md).
+Banco e migracoes: [scripts/](../scripts/README.md).
 
 ## Regenerar GeoJSONs consumidos pelo backend (fluxo principal)
 

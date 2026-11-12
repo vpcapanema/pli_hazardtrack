@@ -26,7 +26,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from . import admin_telemetry
+from . import admin_store, admin_telemetry, alert_store
 from .admin_format import format_datetime_br
 from .aggregator import state
 
@@ -263,8 +263,17 @@ def _regional(snapshot: Dict[str, Any]) -> Dict[str, Any]:
     return {"regions": out, "points_unassigned": unknown}
 
 
-def _hourly_by_region(regional: Dict[str, Any]) -> Dict[str, Any]:
-    cache = state.get_rain_series()
+def _hourly_by_region(
+    regional: Dict[str, Any], cache: Optional[Dict[str, Any]] = None,
+    *, live: bool = False,
+) -> Dict[str, Any]:
+    if not live and alert_store.configured():
+        stored = admin_store.product("geo")
+        return stored["hourly"] if stored else {
+            "available": False, "reason": "aguardando primeiro ciclo no banco",
+        }
+    if cache is None and not live:
+        cache = state.get_rain_series()
     if not cache or not cache.get("series"):
         return {
             "available": False,
@@ -331,7 +340,11 @@ def _hourly_by_region(regional: Dict[str, Any]) -> Dict[str, Any]:
 # 3) escalada / recuo de RD por UA (historico curto em RAM)
 # --------------------------------------------------------------------------
 def _escalation(snapshot: Dict[str, Any]) -> Dict[str, Any]:
-    hist = state.get_point_history()
+    if alert_store.configured():
+        at = _parse_ts(snapshot.get("timestamp_utc"))
+        hist = admin_store.point_history(at) if at else {}
+    else:
+        hist = state.get_point_history()
     if not hist:
         return {
             "available": False,
@@ -347,11 +360,29 @@ def _escalation(snapshot: Dict[str, Any]) -> Dict[str, Any]:
     for key, rows in hist.items():
         if not rows:
             continue
-        depth = max(depth, len(rows))
         ua_id, _, hazard = key.rpartition(":")
+        p = pts.get((ua_id, hazard), {})
+        if alert_store.configured() and (
+            not p or p.get("source") == "NO_DATA" or p.get("rd") is None
+        ):
+            continue
+        depth = max(depth, len(rows))
         now_rd = int(rows[-1].get("rd") or 0)
-        rd_1h = int(rows[-7].get("rd") or 0) if len(rows) >= 7 else None
-        rd_4h = int(rows[0].get("rd") or 0) if len(rows) >= 2 else None
+        if alert_store.configured():
+            now_ts = datetime.fromisoformat(rows[-1]["ts"])
+
+            def reference(hours):
+                cutoff = now_ts - timedelta(hours=hours)
+                candidates = [
+                    r for r in rows
+                    if datetime.fromisoformat(r["ts"]) <= cutoff
+                ]
+                return candidates[-1]["rd"] if candidates else None
+
+            rd_1h, rd_4h = reference(1), reference(4)
+        else:
+            rd_1h = int(rows[-7].get("rd") or 0) if len(rows) >= 7 else None
+            rd_4h = int(rows[0].get("rd") or 0) if len(rows) >= 2 else None
         if rd_1h is not None:
             if now_rd > rd_1h:
                 up_1h += 1
@@ -467,26 +498,39 @@ def _read_horizon(path: Path) -> Dict[str, str]:
 
 
 def _fire_horizons() -> Dict[str, Any]:
-    key = []
-    for name, path in FIRE_HORIZON_FILES:
-        try:
-            key.append((name, path.stat().st_mtime_ns))
-        except OSError:
-            key.append((name, None))
-    key_t = tuple(key)
-    if _fire_cache["key"] == key_t and _fire_cache["value"] is not None:
+    database = alert_store.configured()
+    stored = (
+        admin_store.product("fire") if database else None
+    )
+    key_t = None
+    if not database:
+        key = []
+        for name, path in FIRE_HORIZON_FILES:
+            try:
+                key.append((name, path.stat().st_mtime_ns))
+            except OSError:
+                key.append((name, None))
+        key_t = tuple(key)
+    if (not database
+            and _fire_cache["key"] == key_t
+            and _fire_cache["value"] is not None):
         return _fire_cache["value"]
 
     horizons = []
     by_id: Dict[str, Dict[str, str]] = {}
     for name, path in FIRE_HORIZON_FILES:
-        if not path.exists():
-            continue
-        try:
-            classes = _read_horizon(path)
-        except (OSError, ValueError) as e:
-            log.warning("horizonte %s ilegivel: %s", name, e)
-            continue
+        if database:
+            classes = (stored or {}).get(name)
+            if classes is None:
+                continue
+        else:
+            if not path.exists():
+                continue
+            try:
+                classes = _read_horizon(path)
+            except (OSError, ValueError) as e:
+                log.warning("horizonte %s ilegivel: %s", name, e)
+                continue
         by_id[name] = classes
         counts = {k: 0 for k in RF_ORDER}
         for c in classes.values():
@@ -526,8 +570,9 @@ def _fire_horizons() -> Dict[str, Any]:
         "horizons": horizons,
         "transitions": transitions,
     }
-    _fire_cache["key"] = key_t
-    _fire_cache["value"] = value
+    if not database:
+        _fire_cache["key"] = key_t
+        _fire_cache["value"] = value
     return value
 
 
@@ -577,6 +622,7 @@ def _ops(entries: List[Dict[str, Any]], runtime: Dict[str, Any]) -> Dict:
         "last_error": runtime.get("last_error"),
         "last_error_at_fmt": format_datetime_br(runtime.get("last_error_at")),
         "persisted_total": admin_telemetry.count(),
+        "storage": "PostgreSQL" if alert_store.configured() else "disco",
     }
 
 
@@ -587,7 +633,10 @@ def build_analytics(
     runtime: Dict[str, Any], hours: int = DEFAULT_HOURS,
 ) -> Dict[str, Any]:
     hours = clamp_hours(hours)
-    snapshot = state.get_snapshot()
+    snapshot = (
+        admin_store.snapshot() if alert_store.configured()
+        else state.get_snapshot()
+    )
     entries = admin_telemetry.load(hours=hours)
     series = _cycle_series(entries)
     regional = _regional(snapshot)

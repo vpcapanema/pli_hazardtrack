@@ -1,0 +1,44 @@
+[
+  {"id":"caraguatatuba-ppdc-2025-2026","titulo":"PPDC Caraguatatuba 2025-2026 - vigencia sazonal encerrada","url":"https://www.caraguatatuba.sp.gov.br/pmc/wp-content/uploads/2025/11/PPDC-2025-2026-Plano-de-Defesa-Civil.pdf"},
+  {"id":"caraguatatuba-planos","titulo":"Catalogo municipal de planos","url":"https://estatistica.caraguatatuba.sp.gov.br/planos-municipais/"},
+  {
+    "id": "semil-governanca-2026",
+    "titulo": "Protocolo de Governanca 2026",
+    "url": "https://smastr16.blob.core.windows.net/home/2026/05/Protocolo_de_Governanca_2026.docx__2_-6a19cde61d97f.pdf"
+  },
+  {
+    "id": "semil-pat-2026",
+    "titulo": "Plano Anual de Trabalho 2026",
+    "url": "https://smastr16.blob.core.windows.net/home/2026/05/PAT_2026_FINAL.pdf"
+  },
+  {
+    "id": "rodovias-portaria-04-2026",
+    "titulo": "Portaria SPI SEMIL ARTESP 04 2026",
+    "url": "https://smastr16.blob.core.windows.net/home/2026/05/Portaria-Conjunta-SPI-SEMIL-n-04-2026.pdf"
+  },
+  {
+    "id": "semil-polos-91-2023",
+    "titulo": "Resolucao SEMIL 91 2023",
+    "url": "https://sigam.ambiente.sp.gov.br/sigam3/Repositorio/472/Documentos/ResSEMIL912023ReorganizaPolos.pdf"
+  },
+  {
+    "id": "semil-guia-incendios-2026",
+    "titulo": "Guia orientacoes incendios 2026",
+    "url": "https://smastr16.blob.core.windows.net/home/2026/06/GUIA_ORIENTACOES_INCENDIO.pdf"
+  },
+  {
+    "id": "der-contingencia-2017-alternativo",
+    "titulo": "DER Contingencia historico",
+    "url": "https://dersp.der.sp.gov.br/WebSite/Arquivos/BancoMundial/Plano_Contingencia/PlanoContingncia.pdf"
+  },
+  {
+    "id": "der-seguranca-viaria-alternativo",
+    "titulo": "DER Plano Seguranca",
+    "url": "https://dersp.der.sp.gov.br/WebSite/Arquivos/DadosAbertos/Acidentes/PlanoSeguranca/Plano%20de%20Seguran%C3%A7a%20Vi%C3%A1ria.pdf"
+  },
+  {
+    "id": "cnl-institucional",
+    "titulo": "Novo Litoral",
+    "url": "https://novolitoral.com.br/"
+  }
+]

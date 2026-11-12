@@ -1,8 +1,8 @@
 """
 Controles runtime dos dois sistemas de alerta (ligar/desligar).
 
-Persistidos em disco para sobreviver a restarts leves e serem editaveis
-pelo painel /admin. Default: ambos ligados (monitoramento continuo).
+Persistidos com auditoria no PostgreSQL quando configurado, ou em disco
+no modo local. Default: ambos ligados (monitoramento continuo).
 """
 from __future__ import annotations
 
@@ -13,6 +13,8 @@ import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
+
+from . import admin_store, alert_store
 
 log = logging.getLogger("alert_controls")
 
@@ -63,8 +65,11 @@ def _write_raw(payload: Dict[str, Any]) -> None:
 
 def get_state() -> Dict[str, Any]:
     """Estado completo para API admin."""
-    with _lock:
-        raw = _read_raw()
+    if alert_store.configured():
+        raw = admin_store.controls()
+    else:
+        with _lock:
+            raw = _read_raw()
     geo = bool(raw.get("geo_monitoring", _DEFAULTS["geo_monitoring"]))
     fire = bool(raw.get("fire_monitoring", _DEFAULTS["fire_monitoring"]))
     return {
@@ -93,6 +98,10 @@ def set_system(
     """Liga/desliga um sistema. system: geo_monitoring | fire_monitoring."""
     if system not in _DEFAULTS:
         raise ValueError(f"sistema desconhecido: {system}")
+    if alert_store.configured():
+        admin_store.set_control(system, bool(enabled), actor)
+        log.info("alert control %s=%s (by %s)", system, enabled, actor)
+        return get_state()
     with _lock:
         raw = _read_raw()
         raw[system] = bool(enabled)

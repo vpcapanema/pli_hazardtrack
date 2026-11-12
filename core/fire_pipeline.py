@@ -284,6 +284,10 @@ def run_once(force: bool = False, reason: str = "manual") -> Dict[str, Any]:
             "reason": reason,
         }
         _write_marker(marker_payload)
+        from . import admin_store, alert_store
+        if alert_store.configured():
+            if not admin_store.import_fire():
+                raise RuntimeError("Produtos de fogo nao persistidos")
         log.info("[fire] pipeline concluido em %ss (%s)", elapsed, latest)
         return {"status": "ok", **marker_payload}
     except Exception as exc:  # noqa: BLE001 - logamos e seguimos
